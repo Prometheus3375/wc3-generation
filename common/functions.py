@@ -1,6 +1,5 @@
-from collections import Callable
 from traceback import format_tb
-from typing import Any
+from typing import Any, Callable
 
 
 def except_(smth: Callable[..., Any], *args, **kwargs):

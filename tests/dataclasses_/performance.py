@@ -1,104 +1,19 @@
 import sys
 import timeit
-from dataclasses import dataclass
 from enum import Enum, unique
 from math import sqrt
 from time import perf_counter_ns
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable
 
-from common import except_
-
-
-@dataclass
-class DataClass:
-    field1: int
-    field2: int = 0
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
-
-
-@dataclass(frozen=True)
-class FrozenDataClass:
-    field1: int
-    field2: int = 0
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
-
-
-class NamedTupleSub(NamedTuple):
-    field1: int
-    field2: int = 0
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
-
-
-class Object:
-    __slots__ = 'field1', 'field2'
-
-    def __init__(self, field1: int, field2: int = 0):
-        self.field1 = field1
-        self.field2 = field2
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
-
-
-class ImmutableObject:
-    __slots__ = 'field1', 'field2'
-
-    def __init__(self, field1: int, field2: int = 0):
-        self.field1 = field1
-        self.field2 = field2
-
-    def __setattr__(self, key: str, value: Any):
-        if hasattr(self, key):
-            raise AttributeError(
-                f'cannot assign {value} to attribute {key} '
-                f'of immutable {self.__class__.__name__} instance'
-            )
-
-        super().__setattr__(key, value)
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
-
-
-class ImmutableObjectSuper:
-    __slots__ = 'field1', 'field2'
-
-    def __init__(self, field1: int, field2: int = 0):
-        super().__setattr__('field1', field1)
-        super().__setattr__('field2', field2)
-
-    def __setattr__(self, key: str, value: Any):
-        raise AttributeError(
-            f'cannot assign {value} to attribute {key} '
-            f'of immutable {self.__class__.__name__} instance'
-        )
-
-    def method(self):
-        return 'Hello, I 2 fields'
-
-    def method2(self):
-        return f'Hello, I 2 fields: {self.field1} and {self.field2}'
+from .classes import (
+    DataClass,
+    FrozenDataClass,
+    ImmutableObject,
+    ImmutableObjectObject, ImmutableObjectSuper,
+    NamedTupleSub,
+    Object,
+    ObjectNoSlots,
+)
 
 
 @unique
@@ -132,8 +47,8 @@ class Measure(Enum):
         raise ValueError(f'Unknown measure type {measure}')
 
 
-def repeat(stmt: str, setup: str = 'pass', repeat_: int = 10, number: int = 1_000_000,
-           globals_: dict[str, Any] = None, measure: str = None) -> str:
+def repeat(stmt: str, setup: str = 'pass', repeat_: int = 100, number: int = 1_00_000,
+           globals_: dict[str, Any] = None, measure: Measure = None) -> str:
     values = timeit.repeat(
         stmt=stmt,
         setup=setup,
@@ -142,6 +57,7 @@ def repeat(stmt: str, setup: str = 'pass', repeat_: int = 10, number: int = 1_00
         number=number,
         globals=globals_
     )
+    values = [v / number for v in values]
     mean = sum(values) / len(values)
     std = 3 * sqrt(sum((v - mean) * (v - mean) for v in values) / len(values))
     if not measure:
@@ -150,7 +66,7 @@ def repeat(stmt: str, setup: str = 'pass', repeat_: int = 10, number: int = 1_00
     std = Measure.convert(std, measure)
 
     return (
-        f'{mean: >6.1f} ± {std: >6.1f} {measure} '
+        f'{mean: >6.1f} ± {std: >6.1f} {measure} per loop '
         f'({repeat_:,} runs, {number:,} loops each)'
     )
 
@@ -197,15 +113,13 @@ class Test:
 
 
 def main():
-    data = ImmutableObject(1)
-    except_(exec, 'data.field2 = 1', {'data': data})
-    except_(exec, 'data.field3 = 1', {'data': data})
-    data = FrozenDataClass(1)
-    except_(exec, 'data.field2 = 1', {'data': data})
-
     args = 1,
     strargs = '1'
-    test = Test(strargs, DataClass, FrozenDataClass, Object, ImmutableObject, ImmutableObjectSuper, NamedTupleSub)
+    test = Test(
+        strargs, DataClass, FrozenDataClass, Object, ObjectNoSlots, ImmutableObject, ImmutableObjectSuper,
+        ImmutableObjectObject,
+        NamedTupleSub
+    )
     test.memory(args)
     test.create()
     test.attribute_access('field1')
