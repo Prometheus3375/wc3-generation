@@ -34,14 +34,15 @@ l.method()
 # print(MyList2[list])  # MyList2 must be generic
 
 
-t = MyTuple(1, 'info')
+print('\nNamedTuple special attributes')
+print(f'  _fields: {MyTuple._fields}')
+print(f'  __annotations__: {MyTuple.__annotations__}')
+print(f'  _field_defaults: {MyTuple._field_defaults}')
+print()
 
-print(MyTuple._fields)
-print(MyTuple.__annotations__)
-print(MyTuple._field_defaults)
+t = MyTuple(1, 'info')
 print(type(t._asdict()))
-t2 = t._replace(id=2)
-print(t2)
+
 except_(lambda: print(MyList.lol))
 except_(MyTuple, 1, 'info', 1.0)
 except_(MyTuple, 1)
