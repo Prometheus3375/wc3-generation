@@ -9,8 +9,9 @@ def combine(*classes: type):
 @final
 class CombineMeta(type):
     """
-    A metaclass that allows class combination
+    A metaclass that allows metaclass combination
     """
+    # Original idea: https://stackoverflow.com/a/45873191
     combine = staticmethod(combine)
 
     def __matmul__(self, other):
@@ -23,7 +24,6 @@ class CombineMeta(type):
         raise TypeError(f'type MetaOfMeta is not an acceptable base type')
 
 
-# https://github.com/wunderschild/isidor/blob/master/src/common/metaclasses/base.py
 class Singleton(type, metaclass=CombineMeta):
     # Use weak keys to automatically clean unused classes
     __instances__ = WeakKeyDictionary()

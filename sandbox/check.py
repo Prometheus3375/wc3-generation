@@ -1,18 +1,25 @@
+from types import GenericAlias
 from typing import NamedTuple
 
 from common import except_
 
 
-class MyList(list[list]):
+class LIST:
+    pass
+
+
+class MyList(list[list], LIST):
     lol: int
 
     def method(self):
+        orig_bases: tuple[GenericAlias, ...] = self.__orig_bases__
         print(
             f'{self.__class__.__name__} test\n'
             f'  bases: {self.__class__.__bases__}\n'
-            f'  orig bases: {self.__orig_bases__}\n'
-            f'  args of 1st orig base: {self.__orig_bases__[0].__args__}\n'
-            f'  1st arg of 1st orig base: {self.__orig_bases__[0].__args__[0]}\n'
+            f'  orig bases: {orig_bases}\n'
+            f'  1st orig base params: {orig_bases[0].__parameters__}\n'
+            f'  1st orig base origin: {orig_bases[0].__origin__}\n'
+            f'  1st orig base args: {orig_bases[0].__args__}\n'
         )
 
 
@@ -34,11 +41,12 @@ l.method()
 # print(MyList2[list])  # MyList2 must be generic
 
 
-print('\nNamedTuple special attributes')
-print(f'  _fields: {MyTuple._fields}')
-print(f'  __annotations__: {MyTuple.__annotations__}')
-print(f'  _field_defaults: {MyTuple._field_defaults}')
-print()
+print(
+    'NamedTuple special attributes\n'
+    f'  _fields: {MyTuple._fields}\n'
+    f'  __annotations__: {MyTuple.__annotations__}\n'
+    f'  _field_defaults: {MyTuple._field_defaults}\n'
+)
 
 t = MyTuple(1, 'info')
 print(type(t._asdict()))
