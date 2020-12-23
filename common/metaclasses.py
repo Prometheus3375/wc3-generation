@@ -4,6 +4,9 @@ from weakref import WeakKeyDictionary, WeakValueDictionary
 _combined_metaclasses = WeakValueDictionary()
 
 
+# TODO allow 2 operations: @ and +
+# + combines classes, works as current combining
+# @ makes a subclass of operands, ignoring bases of both of them
 def combine(*classes: type):
     real_classes = {}  # using as ordered set
     for cls in classes:
