@@ -5,8 +5,6 @@ TODO
 Сделать класс wtsStorage, который парсит .wts файл и извлекает из него строки, а также будет иметь методы по поиску
 и сохранению в файл.
 
-Сделать все возможные строки в РО в тестовой карте и пропарсить полученный .wts на наличие новых типов и полей
-
 """
 from enum import Enum
 from io import StringIO
@@ -35,6 +33,9 @@ class wtsString:
 @final
 class CommentType(Enum):
     Ability = 'Abilities'
+    BuffEffect = 'Buffs/Effects'
+    Destructible = 'Destructibles'
+    Doodad = 'Doodads'
     Item = 'Items'
     Unit = 'Units'
     Upgrade = 'Upgrades'
@@ -42,15 +43,35 @@ class CommentType(Enum):
 
 @final
 class CommentField(Enum):
-    EditorSuffix = 'EditorSuffix'
-    Hotkey = 'Hotkey'
-    Name = 'Name'
-    Propernames = 'Propernames'
-    Tip = 'Tip'
-    Ubertip = 'Ubertip'
+    # Abilities
+    Researchhotkey = 'Researchhotkey'
+    Researchtip = 'Researchtip'
+    Researchubertip = 'Researchubertip'
     Unhotkey = 'Unhotkey'
     Untip = 'Untip'
     Unubertip = 'Unubertip'
+
+    # Buffs/Effects
+    Bufftip = 'Bufftip'
+    Buffubertip = 'Buffubertip'
+    EditorName = 'EditorName'
+
+    # Heroes
+    Awakentip = 'Awakentip'  # instant revive in Tavern
+    Revivetip = 'Revivetip'  # revive in altar
+    Propernames = 'Propernames'
+
+    # Units
+    Casterupgradename = 'Casterupgradename'
+    Casterupgradetip = 'Casterupgradetip'
+
+    # Common
+    Description = 'Description'
+    EditorSuffix = 'EditorSuffix'
+    Hotkey = 'Hotkey'
+    Name = 'Name'
+    Tip = 'Tip'
+    Ubertip = 'Ubertip'
 
 
 @final
