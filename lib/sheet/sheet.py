@@ -19,7 +19,7 @@ from types import GenericAlias
 from typing import Any, Callable, ClassVar, Generic, NamedTuple, Type, TypeVar
 
 from common import isnamedtuplesubclass
-from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton
+from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
 
 
 class SheetDefinitionError(Exception):
@@ -27,9 +27,10 @@ class SheetDefinitionError(Exception):
 
 
 _Row_co = TypeVar('_Row_co', covariant=True)
+_SheetMeta = combine(EmptySlotsByDefaults, AllowInstantiation)
 
 
-class Sheet(Generic[_Row_co], metaclass=EmptySlotsByDefaults @ AllowInstantiation, allow_instances=False):
+class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
     transpose: ClassVar[bool]
     column_names: ClassVar[tuple[str, ...]]
     column_conversions: ClassVar[tuple[Callable[[Any], Any], ...]]
