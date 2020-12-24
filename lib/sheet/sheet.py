@@ -23,12 +23,13 @@ class MyRow(Row):
 
 """
 from types import GenericAlias
-from typing import Any, Callable, ClassVar, Generic, NamedTuple, Type, TypeVar
+from typing import Any, Callable, ClassVar, Generic, NamedTuple, Type, TypeVar, final
 
 from common import isnamedtuplesubclass
 from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
 
 
+@final
 class SheetDefinitionError(Exception):
     __module__ = 'builtins'  # https://stackoverflow.com/a/19419825
 
