@@ -1,4 +1,4 @@
-from typing import AbstractSet, Generic, Iterable, Iterator, TypeVar, Union, overload
+from typing import AbstractSet, ClassVar, Generic, Iterable, Iterator, TypeVar, Union, overload
 
 _T1 = TypeVar('_T1')
 _T2 = TypeVar('_T2')
@@ -45,7 +45,7 @@ class BijectiveMapItemsView(AbstractSet[_V]):
 class BijectiveMap(Generic[_T1, _T2]):
     __slots__ = '_data'
 
-    _no_arg = object()
+    _no_arg: ClassVar[object] = object()
 
     def __init__(self, iterable: Iterable[_V] = ()):
         self._data: dict[_K, _V] = {}

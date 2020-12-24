@@ -14,6 +14,13 @@ TODO
 поле column_conversions, которое будет использоваться для конвертации значений в нужные типы. Если этого поля нет,
 будут использоваться типы, определённые в именованном кортеже.
 
+- Сделать специальный класс Row, который будет содержать информацию о именах колонок и их конвертации:
+
+class MyRow(Row):
+    name: str = 'name'  # conversion is taken from annotation
+    damage: float = 'damage', must_be_positive
+    info: tuple[int, str] = 'info' # not allowed
+
 """
 from types import GenericAlias
 from typing import Any, Callable, ClassVar, Generic, NamedTuple, Type, TypeVar
@@ -23,7 +30,7 @@ from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singlet
 
 
 class SheetDefinitionError(Exception):
-    pass
+    __module__ = 'builtins'  # https://stackoverflow.com/a/19419825
 
 
 _Row_co = TypeVar('_Row_co', covariant=True)
@@ -43,6 +50,9 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
 
     def __init_subclass__(cls, *, special: bool = False, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        if not isinstance(special, bool):
+            raise TypeError(f'special argument must be bool, got {type(special)}')
 
         if special: return
 
