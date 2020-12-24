@@ -93,6 +93,5 @@ class Sheet(Generic[_Row_co], metaclass=EmptySlotsByDefaults @ AllowInstantiatio
             raise SheetDefinitionError(f'sheet {cls.__qualname__} has different number of column names and conversions')
 
 
-# FIXME: type(Sheet) @ Singleton must return subclass of type(Sheet)
 class SingletonSheet(Sheet[_Row_co], metaclass=type(Sheet) @ Singleton, special=True, allow_instances=False):
     pass

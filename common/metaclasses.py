@@ -4,28 +4,22 @@ from weakref import WeakKeyDictionary, WeakValueDictionary
 _combined_metaclasses = WeakValueDictionary()
 
 
-# TODO allow 2 operations: @ and +
-# + combines classes, works as current combining
-# @ makes a subclass of operands, ignoring bases of both of them
 def combine(*classes: type):
-    real_classes = {}  # using as ordered set
-    for cls in classes:
-        if cls.__bases__ in _combined_metaclasses:  # indicates that cls is a combination class
-            for base in cls.__bases__:
-                # No need to check bases of bases
-                # This function guaranties that any of combination class's bases is not a combination class
-                real_classes[base] = None
-        else:
-            real_classes[cls] = None
-    classes = tuple(real_classes)
-
     # Order of bases matters
     # (A, B) and (B, A) different base tuples which lead to different MRO
     # So combined classes of these bases are different
     if classes in _combined_metaclasses:
         return _combined_metaclasses[classes]
 
-    cls = CombineMeta('@'.join(cls.__qualname__ for cls in classes), classes, {})
+    cls = CombineMeta(
+        '@'.join(
+            f'({cls.__qualname__})' if cls.__bases__ in _combined_metaclasses
+            else cls.__qualname__
+            for cls in classes
+        ),
+        classes,
+        {'__module__': None}
+    )
     _combined_metaclasses[classes] = cls
     return cls
 
