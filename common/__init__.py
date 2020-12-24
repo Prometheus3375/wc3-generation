@@ -1,1 +1,1 @@
-from .functions import except_, isnamedtuple, isnamedtuplesubclass
+from .functions import exc2str, except_, isnamedtuple, isnamedtuplesubclass

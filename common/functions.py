@@ -2,13 +2,17 @@ from traceback import format_tb
 from typing import Any, Callable
 
 
+def exc2str(e: Exception) -> str:
+    message = ''.join(format_tb(e.__traceback__))
+    message = f'Traceback (most recent call last):\n{message}{e.__class__.__name__}: {e}\n'
+    return message
+
+
 def except_(smth: Callable[..., Any], *args, **kwargs):
     try:
         return smth(*args, **kwargs)
     except Exception as e:
-        message = ''.join(format_tb(e.__traceback__))
-        message = f'Traceback (most recent call last):\n{message}{e.__class__.__name__}: {e}\n'
-        print(message)
+        print(exc2str(e))
 
 
 def isnamedtuplesubclass(cls: type) -> bool:
