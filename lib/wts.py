@@ -5,11 +5,15 @@ TODO
 Сделать класс wtsStorage, который парсит .wts файл и извлекает из него строки, а также будет иметь методы по поиску
 и сохранению в файл.
 
+Сделать все возможные строки в РО в тестовой карте и пропарсить полученный .wts на наличие новых типов и полей
+
 """
+from enum import Enum
 from io import StringIO
-from typing import ClassVar, overload
+from typing import ClassVar, Iterator, final, overload
 
 
+@final
 class wtsString:
     __slots__ = 'id', 'comment', 'content'
 
@@ -28,6 +32,28 @@ class wtsString:
         )
 
 
+@final
+class CommentType(Enum):
+    Ability = 'Abilities'
+    Item = 'Items'
+    Unit = 'Units'
+    Upgrade = 'Upgrades'
+
+
+@final
+class CommentField(Enum):
+    EditorSuffix = 'EditorSuffix'
+    Hotkey = 'Hotkey'
+    Name = 'Name'
+    Propernames = 'Propernames'
+    Tip = 'Tip'
+    Ubertip = 'Ubertip'
+    Unhotkey = 'Unhotkey'
+    Untip = 'Untip'
+    Unubertip = 'Unubertip'
+
+
+@final
 class wtsFile:
     __slots__ = '_filepath', '_strings'
 
@@ -78,7 +104,7 @@ class wtsFile:
     def __contains__(self, item: wtsString) -> bool:
         return item in self._strings
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[wtsString]:
         return iter(self._strings)
 
     @overload
