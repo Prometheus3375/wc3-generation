@@ -1,0 +1,424 @@
+﻿STRING 1
+{
+Generation Test Map
+}
+
+STRING 2
+{
+Any
+}
+
+STRING 3
+{
+Prometheus3375
+}
+
+STRING 4
+{
+Player 1
+}
+
+STRING 5
+{
+Force 1
+}
+
+STRING 6
+// Units: H000 (My paladin), Description (Description)
+{
+My cool description
+}
+
+STRING 7
+// Units: H000 (My paladin), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 8
+// Units: H000 (My paladin), Name (Name)
+{
+My paladin
+}
+
+STRING 9
+// Units: H000 (My paladin), EditorSuffix (Name - Editor Suffix)
+{
+My suffix
+}
+
+STRING 10
+// Units: H000 (My paladin), Propernames (Proper Names)
+{
+Granis Darkhammer,Jorn the Redeemer,Sage Truthbearer,Malak the Avenger,Gavinrad the Dire,Morlune the Mighty,Agamand the True,Ballador the Bright,Manadar the Healer,Zann the Defender,Arius the Seeker,Aurrius the Pure,Karnwield the Seeker,SUPERCOOL,Buzan the Fearless
+}
+
+STRING 11
+// Units: H000 (My paladin), Awakentip (Tooltip - Awaken)
+{
+Revive My Paladin
+}
+
+STRING 12
+// Units: H000 (My paladin), Tip (Tooltip - Basic)
+{
+Summon My Paladin
+}
+
+STRING 13
+// Units: H000 (My paladin), Ubertip (Tooltip - Extended)
+{
+Warrior Hero, exceptional at defense and augmenting nearby friendly troops. Can learn Holy Light, Divine Shield, Devotion Aura and Resurrection.
+
+|cffffcc00Attacks land units.|r
+}
+
+STRING 14
+// Units: H000 (My paladin), Revivetip (Tooltip - Revive)
+{
+Revive My Paladin
+}
+
+STRING 15
+// Units: h001 (My Priest), Casterupgradename (Caster Upgrade Names)
+{
+Initiate,Adept,Master
+}
+
+STRING 16
+// Units: h001 (My Priest), Casterupgradetip (Caster Upgrade Tips)
+{
+- Heal,- Heal|n- Dispel Magic,- Heal|n- Dispel Magic|n- Inner Fire|n- COOLING
+}
+
+STRING 17
+// Units: h001 (My Priest), Description (Description)
+{
+My description
+}
+
+STRING 18
+// Units: h001 (My Priest), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 19
+// Units: h001 (My Priest), Name (Name)
+{
+My Priest
+}
+
+STRING 20
+// Units: h001 (My Priest), EditorSuffix (Name - Editor Suffix)
+{
+My suffix
+}
+
+STRING 21
+// Units: h001 (My Priest), Tip (Tooltip - Basic)
+{
+Train My Priest
+}
+
+STRING 22
+// Units: h001 (My Priest), Ubertip (Tooltip - Extended)
+{
+Supporting spellcaster. Can initially cast Heal, which increases the life of wounded units. Can also learn Dispel Magic and Inner Fire.
+
+|cffffcc00Attacks land and air units.|r
+}
+
+STRING 23
+// Items: I000 (My Alleria's Flute of Accuracy), Description (Description)
+{
+My description
+}
+
+STRING 24
+// Items: I000 (My Alleria's Flute of Accuracy), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 25
+// Items: I000 (My Alleria's Flute of Accuracy), Name (Name)
+{
+My Alleria's Flute of Accuracy
+}
+
+STRING 26
+// Items: I000 (My Alleria's Flute of Accuracy), Tip (Tooltip - Basic)
+{
+Purchase My Alleria's Flute of Accuracy
+}
+
+STRING 27
+// Items: I000 (My Alleria's Flute of Accuracy), Ubertip (Tooltip - Extended)
+{
+Increases nearby ranged units' damage by <AIar,DataA1,%>%.
+Does not stack with Trueshot Aura.
+}
+
+STRING 28
+// Destructibles: B000 (My Ashenvale Tree Wall), EditorSuffix (Editor Suffix)
+{
+My suffux
+}
+
+STRING 29
+// Destructibles: B000 (My Ashenvale Tree Wall), Name (Name)
+{
+My Ashenvale Tree Wall
+}
+
+STRING 30
+// Doodads: D000 (My Altar), Name (Name)
+{
+My Altar
+}
+
+STRING 31
+// Abilities: A000 (My Aerial Shackles), EditorSuffix (Editor Suffix)
+{
+My suffix
+}
+
+STRING 32
+// Abilities: A000 (My Aerial Shackles), Hotkey (Hotkey - Normal)
+{
+Q
+}
+
+STRING 33
+// Abilities: A000 (My Aerial Shackles), Unhotkey (Hotkey - Turn Off)
+{
+Q
+}
+
+STRING 34
+// Abilities: A000 (My Aerial Shackles), Name (Name)
+{
+My Aerial Shackles
+}
+
+STRING 35
+// Abilities: A000 (My Aerial Shackles), Tip (Tooltip - Normal)
+{
+My Aerial Shackles
+}
+
+STRING 36
+// Abilities: A000 (My Aerial Shackles), Ubertip (Tooltip - Normal - Extended)
+{
+Magically binds a target enemy air unit, so that it cannot move or attack and takes <Amls,DataA1> damage per second.
+Lasts <Amls,Dur1> seconds.
+}
+
+STRING 37
+// Abilities: A000 (My Aerial Shackles), Untip (Tooltip - Turn Off)
+{
+untip
+}
+
+STRING 38
+// Abilities: A000 (My Aerial Shackles), Unubertip (Tooltip - Turn Off - Extended)
+{
+ynybertip
+}
+
+STRING 39
+// Abilities: A001 (My Banish), EditorSuffix (Editor Suffix)
+{
+My Suffix
+}
+
+STRING 40
+// Abilities: A001 (My Banish), Researchhotkey (Hotkey - Learn)
+{
+Q
+}
+
+STRING 41
+// Abilities: A001 (My Banish), Hotkey (Hotkey - Normal)
+{
+Q
+}
+
+STRING 42
+// Abilities: A001 (My Banish), Unhotkey (Hotkey - Turn Off)
+{
+Q
+}
+
+STRING 43
+// Abilities: A001 (My Banish), Name (Name)
+{
+My Banish
+}
+
+STRING 44
+// Abilities: A001 (My Banish), Researchtip (Tooltip - Learn)
+{
+Learn My Banish - [|cffffcc00Level %d|r]
+}
+
+STRING 45
+// Abilities: A001 (My Banish), Researchubertip (Tooltip - Learn - Extended)
+{
+Turns a non-mechanical unit ethereal and slows its movement speed by <AHbn,DataA1,%>% for a short duration. Ethereal creatures cannot attack, but they can cast spells and certain spells cast upon them will have a greater effect.
+|cffffcc00Level 1|r - <AHbn,Cost1> mana, lasts <AHbn,Dur1> seconds.
+|cffffcc00Level 2|r - <AHbn,Cost2> mana, lasts <AHbn,Dur2> seconds.
+|cffffcc00Level 3|r - <AHbn,Cost3> mana, lasts <AHbn,Dur3> seconds.
+}
+
+STRING 46
+// Abilities: A001 (My Banish), Tip (Tooltip - Normal)
+{
+My Banish - [|cffffcc00Level 1|r]
+}
+
+STRING 47
+// Abilities: A001 (My Banish), Tip (Tooltip - Normal)
+{
+My Banish - [|cffffcc00Level 2|r]
+}
+
+STRING 48
+// Abilities: A001 (My Banish), Tip (Tooltip - Normal)
+{
+My Banish - [|cffffcc00Level 3|r]
+}
+
+STRING 49
+// Abilities: A001 (My Banish), Ubertip (Tooltip - Normal - Extended)
+{
+Turns a unit ethereal and slows its movement speed by <AHbn,DataA1,%>% for <AHbn,Dur1> seconds. Ethereal creatures cannot attack, but they can cast spells and certain spells cast upon them will have a greater effect.
+}
+
+STRING 50
+// Abilities: A001 (My Banish), Ubertip (Tooltip - Normal - Extended)
+{
+Turns a non-mechanical unit ethereal and slows its movement speed by <AHbn,DataA2,%>% for <AHbn,Dur2> seconds. Ethereal creatures cannot attack, but they can cast spells and certain spells cast upon them will have a greater effect.
+}
+
+STRING 51
+// Abilities: A001 (My Banish), Ubertip (Tooltip - Normal - Extended)
+{
+Turns a non-mechanical unit ethereal and slows its movement speed by <AHbn,DataA3,%>% for <AHbn,Dur3> seconds. Ethereal creatures cannot attack, but they can cast spells and certain spells cast upon them will have a greater effect.
+}
+
+STRING 52
+// Buffs/Effects: B000 (My name), EditorSuffix (Editor Suffix)
+{
+My suffix
+}
+
+STRING 53
+// Buffs/Effects: B000 (My name), EditorName (Name (Editor Only))
+{
+My name
+}
+
+STRING 54
+// Buffs/Effects: B000 (My name), Bufftip (Tooltip)
+{
+My Banish
+}
+
+STRING 55
+// Buffs/Effects: B000 (My name), Buffubertip (Tooltip - Extended)
+{
+This unit is My Banished; Banished creatures cannot attack, but they can cast spells and will take extra damage from Magic attacks and spells.
+}
+
+STRING 56
+// Upgrades: R000 (Animal War Training), EditorSuffix (Editor Suffix)
+{
+My Suffix
+}
+
+STRING 57
+// Upgrades: R000 (Animal War Training), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 58
+// Upgrades: R000 (Animal War Training), Name (Name)
+{
+My Animal War Training
+}
+
+STRING 59
+// Upgrades: R000 (Animal War Training), Tip (Tooltip)
+{
+Research My Animal War Training
+}
+
+STRING 60
+// Upgrades: R000 (Animal War Training), Ubertip (Tooltip - Extended)
+{
+Increases the maximum hit points of Knights, Dragonhawk Riders, and Gryphon Riders by <Rhan,base1>. 
+}
+
+STRING 61
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), EditorSuffix (Editor Suffix)
+{
+My suffix
+}
+
+STRING 62
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), EditorSuffix (Editor Suffix)
+{
+My suffix
+}
+
+STRING 63
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 64
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Hotkey (Hotkey)
+{
+Q
+}
+
+STRING 65
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Name (Name)
+{
+Priest Adept Training 1
+}
+
+STRING 66
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Name (Name)
+{
+Priest Master Training 1
+}
+
+STRING 67
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Tip (Tooltip)
+{
+Priest Adept Training 1
+}
+
+STRING 68
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Tip (Tooltip)
+{
+Priest Master Training 1
+}
+
+STRING 69
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Ubertip (Tooltip - Extended)
+{
+Increases Priests' mana capacity, mana regeneration rate, hit points, and gives them the ability to cast Dispel Magic. 
+}
+
+STRING 70
+// Upgrades: R001 (Priest Adept Training,Priest Master Training), Ubertip (Tooltip - Extended)
+{
+Increases Priests' mana capacity, mana regeneration rate, hit points, and gives them the ability to cast Inner Fire. 
+}
+
