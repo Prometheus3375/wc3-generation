@@ -30,3 +30,7 @@ def isnamedtuplesubclass(cls: type) -> bool:
 
 def isnamedtuple(obj: tuple) -> bool:
     return isnamedtuplesubclass(obj.__class__)
+
+
+def truncate_string(s: str, max_len: int = 10) -> str:
+    return s if len(s) <= max_len else f'{s[:max_len - 3]}...'
