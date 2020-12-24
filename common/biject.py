@@ -175,17 +175,17 @@ class BijectiveMap(Generic[_T1, _T2]):
     def clear(self):
         self._data.clear()
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return self._data == other._data
 
-        raise TypeError(f'An attempt to compare types {type(self)} and {type(other)}')
+        return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return self._data != other._data
 
-        raise TypeError(f'An attempt to compare types {type(self)} and {type(other)}')
+        return False
 
     def __repr__(self):
         entries = ', '.join(repr(v) for v in self)
