@@ -121,7 +121,7 @@ class {typename}(tuple):
         """Create a new instance of {typename}({args})"""
         return tuple.__new__(cls, ({args},))
 
-    def replace(self, **kwargs) -> '{typename}':
+    def replace(self, /, **kwargs) -> '{typename}':
         """Return a new {typename} object replacing specified fields with new values"""
         result = self.__class__(*map(kwargs.pop, field_names, self))
         if kwargs:
@@ -174,6 +174,7 @@ class RowMeta(type):
                 # Возможно сделать вложенные подряды
                 # Переделать fields, names и conversions в names -> fields и names -> conversions
                 # если имя берётся из аннотации, то _ конвертируются в пробелы; запретить _ в начале и конце имён
+                # чтобы проверять, что объект является Row, заносить их всех в WeakRefSet
 
                 name = value[0]
                 convert = value[1] if len(value) == 2 else fields[name]
