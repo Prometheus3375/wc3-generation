@@ -2,31 +2,28 @@
 
 TODO
 
-- Использовать статические классы (синглтоны, обычные классы) для репрезентации листов.
+Использовать статические классы (синглтоны, обычные классы) для репрезентации листов.
 
-- Иметь абстрактный  класс для листов с методами на извлечение строки, ряда, отдельной ячейки и т. п. При определении
+Иметь абстрактный  класс для листов с методами на извлечение строки, ряда, отдельной ячейки и т. п. При определении
 подкласса делать проверки для требуемых полей. Для создания объекта будет передаваться матрица, которая при
 необходимости будет транспонирована. Будут проверены названия колонок и их количество. После этого каждый ряд будет
 прочитан, его значения будут сконвертированы в нужный тип и переданы в класс-ряд (именованный кортеж). При ошибке
 конвертации выдавать ячейку, в которой произошла ошибка.
 
-- В наследниках будут обязательны следующие поля: transpose, column_names. При необходимости можно будет определить
-поле column_conversions, которое будет использоваться для конвертации значений в нужные типы. Если этого поля нет,
-будут использоваться типы, определённые в именованном кортеже.
-
-- Сделать специальный класс Row, который будет содержать информацию о именах колонок и их конвертации:
-
-class MyRow(Row):
-    name: str = 'name'  # conversion is taken from annotation
-    damage: float = 'damage', must_be_positive
-    info: tuple[int, str] = 'info' # not allowed
+Изменить Sheet под новый Row:
+    - оставить только поля transpose и row_class
+    - добавить поля sheet_name и sheet_index
+    - сделать Sheet синглтоном и удалить SingletonSheet
+    - обновить __init_subclass__ соответсвующе
 
 """
 from types import GenericAlias
-from typing import Any, Callable, ClassVar, Generic, NamedTuple, Type, TypeVar, final
+from typing import ClassVar, Generic, Type, TypeVar, final
 
 from common import isnamedtuplesubclass
 from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
+from .conversions import ConversionFunc
+from .row import Row
 
 
 @final
@@ -41,8 +38,8 @@ _SheetMeta = combine(EmptySlotsByDefaults, AllowInstantiation)
 class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
     transpose: ClassVar[bool]
     column_names: ClassVar[tuple[str, ...]]
-    column_conversions: ClassVar[tuple[Callable[[Any], Any], ...]]
-    row_class: ClassVar[Type[NamedTuple]]
+    column_conversions: ClassVar[tuple[ConversionFunc, ...]]
+    row_class: ClassVar[Type[Row]]
 
     __slots__ = '_rows'
 
