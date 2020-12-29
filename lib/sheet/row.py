@@ -1,3 +1,13 @@
+"""
+
+TODO
+
+Возможно сделать вложенные подряды
+Переделать fields, names и conversions в names -> fields и names -> conversions
+Чтобы проверять, что объект является Row, заносить их всех в WeakRefSet
+
+"""
+
 import builtins
 import sys
 import typing
@@ -25,13 +35,12 @@ def _type_repr(hint: _T) -> str:
     return typing._type_repr(hint)
 
 
-# attributes prohibited to set in Row subclass
-_prohibited = frozenset((
+_row_attributes = frozenset((
     '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
     'fields', 'column_names', 'column_conversions', 'replace', 'as_dict'
 ))
 
-_special = frozenset(('__module__', '__name__', '__annotations__'))
+_ignored_attributes = frozenset(('__module__', '__name__', '__annotations__'))
 
 
 def row(typename: str,
@@ -45,6 +54,10 @@ def row(typename: str,
 
     if len(fields) == 0:
         raise ValueError(f'row must have at least one column')
+
+    if not _row_attributes.isdisjoint(fields):
+        attrs = ', '.join(_row_attributes & fields.keys())
+        raise AttributeError(f'fields must not overwrite special attributes {attrs}')
 
     fields = {sys.intern(f): _type_check(t, f'field {f} annotation must be a type')
               for f, t in fields.items()}
@@ -78,7 +91,7 @@ def row(typename: str,
     )
     locals_ = {}
 
-    # Add type hints to globals
+    # region Add type hints to globals
     seen = set()
     type_hints = deque(set(fields.values()))
     while type_hints:
@@ -99,6 +112,7 @@ def row(typename: str,
                     raise KeyError(f'type representation {r} is identical for {gr!r} and {t!r}')
             else:
                 globals_[r] = t
+    # endregion
 
     getters = StringIO()
     for i, f in enumerate(fields):
@@ -123,7 +137,7 @@ class {typename}(tuple):
 
     def replace(self, /, **kwargs) -> '{typename}':
         """Return a new {typename} object replacing specified fields with new values"""
-        result = self.__class__(*map(kwargs.pop, field_names, self))
+        result = self.__class__(*map(kwargs.pop, self.fields, self))
         if kwargs:
             raise ValueError(f"got unexpected field names: {{', '.join(kwargs)}}")
         
@@ -131,11 +145,11 @@ class {typename}(tuple):
 
     def as_dict(self) -> dict[str, Any]:
         """Return a new dict which maps field names to their values"""
-        return dict(zip(field_names, self))
+        return dict(zip(self.fields, self))
 
     def __repr__(self):
         """Return a nicely formatted representation string"""
-        return f"{typename}({{', '.join(f'{{k}}={{v!r}}' for k, v in zip(field_names, self))}})"
+        return f"{typename}({{', '.join(f'{{k}}={{v!r}}' for k, v in zip(self.fields, self))}})"
 
     def __getnewargs__(self):
         """Return self as a plain tuple. Used by copy and pickle"""
@@ -156,30 +170,38 @@ class RowMeta(type):
         if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Row):
             raise TypeError(f'rows must have only one base class and this class must be {Row.__name__}')
 
-        fields = namespace.get('__annotations__', {})
+        fields: dict[str, Any] = namespace.get('__annotations__', {})
         module = namespace.get('__module__', '__main__')
 
         col_names = []
         col_converts = []
-        for name in fields:
-            if name in namespace:
-                value = namespace[name]
+        for field, convert in fields.items():
+            if field.startswith('_') or field.endswith('_'):
+                raise ValueError(f'field names must not start or end with underscore, got {field}')
+            name = field.replace('_', ' ')
+
+            if field in namespace:
+                value = namespace[field]
                 if not isinstance(value, tuple):
-                    raise ValueError(f'type of fields must be tuple, got {type(name)} for {name}')
-                if len(value) == 0 or len(value) > 2:
-                    raise ValueError(f'length of a field tuple must be 1 or 2, got {len(value)} for {name}')
+                    raise TypeError(f'type of fields must be tuple, got {type(value)} for {field}')
+                lv = len(value)
+                if lv == 0 or lv > 2:
+                    raise ValueError(f'length of a field tuple must be 1 or 2, got {len(value)} for {field}')
 
-                # TODO проверять, что имя str, а конвертация callable
-                # Разрешить вариант, где имя берётся из аннотации, а конвертация из тупла
-                # Возможно сделать вложенные подряды
-                # Переделать fields, names и conversions в names -> fields и names -> conversions
-                # если имя берётся из аннотации, то _ конвертируются в пробелы; запретить _ в начале и конце имён
-                # чтобы проверять, что объект является Row, заносить их всех в WeakRefSet
-
-                name = value[0]
-                convert = value[1] if len(value) == 2 else fields[name]
-            else:
-                convert = fields[name]
+                if lv == 1:
+                    v = value[0]
+                    if type(v) is str:
+                        name = v
+                    elif callable(v):
+                        convert = v
+                    else:
+                        raise TypeError(f'field tuple of length 1 must contain either string or callable, '
+                                        f'got {type(v)} for {field}')
+                else:
+                    name, convert = value
+                    if not (type(name) is str and callable(convert)):
+                        raise TypeError(f'field tuple of length 2 must contain string and callable, '
+                                        f'got {type(name)} and {type(convert)} respectively for {field}')
 
             col_names.append(name)
             col_converts.append(convert)
@@ -187,9 +209,9 @@ class RowMeta(type):
         row_ = row(typename, fields, tuple(col_names), tuple(col_converts), module)
 
         for attr in namespace:
-            if attr in _prohibited:
+            if attr in _row_attributes:
                 raise AttributeError(f'cannot overwrite special {Row.__name__} attribute {attr}')
-            elif not (attr in _special or attr in fields):
+            elif not (attr in _ignored_attributes or attr in fields):
                 setattr(row_, attr, namespace[attr])
 
         return row_
