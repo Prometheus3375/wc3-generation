@@ -44,11 +44,8 @@ def _type_repr(hint: _T) -> str:
 
 
 _row_attributes = frozenset((
-    '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
+    '__slots__', '__init__', '__new__', '__repr__', '__getnewargs__', '__init_subclass__',
     'fields', 'column_names', 'column_conversions', 'replace', 'as_dict'
-))
-_ignored_attributes = frozenset((
-    '__module__', '__name__', '__annotations__'
 ))
 
 _rows = WeakSet()
@@ -181,12 +178,23 @@ class {typename}(tuple):
 
 
 class RowMeta(type):
+    # Attribute names
+    rewrite_allowed = frozenset((
+        '__repr__',
+    ))
+    rewrite_forbidden = _row_attributes - rewrite_allowed
+    ignored = frozenset((
+        '__annotations__', '__module__', '__name__', '__qualname__'
+    ))
+
     def __new__(mcs, typename: str, bases: tuple, namespace: dict, **kwargs):
         if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Row):
             raise TypeError(f'rows must have only one base class and this class must be {Row.__name__}')
 
-        fields: dict[str, Any] = namespace.get('__annotations__', {})
-        module = namespace.get('__module__', __name__)
+        fields: dict[str, Any] = namespace.pop('__annotations__', {})
+        module = namespace.pop('__module__', __name__)
+        # TODO add __qualname__ extraction
+        # Clean ignored set from popped attrs, iterate throigh it to pop all its contents
 
         col_names = []
         col_converts = []
@@ -196,7 +204,7 @@ class RowMeta(type):
             name = field.replace('_', ' ')
 
             if field in namespace:
-                value = namespace[field]
+                value = namespace.pop(field)
                 if not isinstance(value, tuple):
                     raise TypeError(f'type of fields must be tuple, got {type(value)} for {field}')
                 lv = len(value)
@@ -224,9 +232,9 @@ class RowMeta(type):
         row_ = row(typename, fields, tuple(col_names), tuple(col_converts), module)
 
         for attr in namespace:
-            if attr in _row_attributes:
+            if attr in mcs.rewrite_forbidden:
                 raise AttributeError(f'cannot overwrite special {Row.__name__} attribute {attr}')
-            elif not (attr in _ignored_attributes or attr in fields):
+            elif attr not in mcs.ignored:
                 setattr(row_, attr, namespace[attr])
 
         return row_
