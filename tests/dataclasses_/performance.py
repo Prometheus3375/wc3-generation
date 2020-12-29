@@ -1,3 +1,11 @@
+"""
+
+TODO
+
+Make special structure where class creation, attribute access is described to allow easy tests
+
+"""
+
 import sys
 import timeit
 from enum import Enum, unique
@@ -79,10 +87,13 @@ class Test:
         l = max(len(cls.__name__) for cls in self._classes)
         self._namef = f' <{l}'
 
+    def _testprint(self, cls: type, func: Callable[[type], Any]):
+        print(f'  {cls.__name__:{self._namef}}: {func(cls)}')
+
     def _test(self, name: str, func: Callable[[type], Any]):
         print(f'Test {name}')
         for cls in self._classes:
-            print(f'  {cls.__name__:{self._namef}}: {func(cls)}')
+            self._testprint(cls, func)
         print()
 
     def memory(self, args: tuple):
@@ -121,8 +132,18 @@ def main():
         NamedTupleSub
     )
     test.memory(args)
+    test._testprint(dict, lambda cls: f'{sys.getsizeof(cls(field1=1, field2=0))} b')
     test.create()
+    test._testprint(dict, lambda cls: repeat(
+        f'{cls.__name__}(field1=1, field2=0)',
+        globals_=dict(dict=dict)
+    ))
     test.attribute_access('field1')
+    test._testprint(dict, lambda cls: repeat(
+        stmt=f'data["field1"]',
+        setup=f'data = {cls.__name__}(field1=1, field2=0)',
+        globals_=dict(dict=dict)
+    ))
     test.method_call('method')
     test.method_call('method2')
 
