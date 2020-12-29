@@ -194,5 +194,8 @@ class RowMeta(type):
 
         return row_
 
+    def __call__(cls, *args, **kwargs):
+        raise TypeError(f'class {cls.__class__.__qualname__} cannot be instantiated')
+
 
 Row = type.__new__(RowMeta, 'Row', (), {})
