@@ -13,6 +13,8 @@ For better debugging, define some Row functions locally, __module__ and __qualna
     __init_subclass__
 Ensure that qualnames of all functions are f'{class.__qualname__}{func.__name__}'
 Add final _ to all special Row attributes
+In methods specify as many positional only args as possible
+
 """
 
 import builtins
@@ -64,9 +66,11 @@ def row(typename: str,
     if len(fields) == 0:
         raise ValueError(f'row must have at least one column')
 
-    if not _row_attributes.isdisjoint(fields):
+    if common := _row_attributes & fields.keys():
+        attributes = 'attribute' if len(common) == 1 else 'attributes'
         attrs = ', '.join(_row_attributes & fields.keys())
-        raise AttributeError(f'fields must not overwrite special attributes {attrs}')
+        raise AttributeError(f'fields must not overwrite special {attributes} {attrs}')
+    del common
 
     fields = {sys.intern(f): _type_check(t, f'field {f} annotation must be a type')
               for f, t in fields.items()}
