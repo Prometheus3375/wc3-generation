@@ -5,7 +5,13 @@ TODO
 Возможно сделать вложенные подряды
 Переделать fields, names и conversions в names -> fields и names -> conversions
 Чтобы проверять, что объект является Row, заносить их всех в WeakRefSet
-
+For better debugging, define some Row functions locally, __module__ and __qualname__ of such functions must be changed
+  Function to be inside string code:
+    __init__
+    __new__
+    __getnewargs__
+    __init_subclass__
+Ensure that qualnames of all functions are f'{class.__qualname__}{func.__name__}'
 """
 
 import builtins
@@ -15,7 +21,7 @@ from _collections import _tuplegetter
 from collections import deque
 from io import StringIO
 from types import GenericAlias
-from typing import Any, Callable, Final, TypeVar, final
+from typing import Any, Final, TypeVar, final
 
 from .conversions import ConversionFunc
 
@@ -75,11 +81,12 @@ def row(typename: str,
         map=map,
         dict=dict,
         zip=zip,
+        list=list,
+        len=len,
         ValueError=ValueError,
         TypeError=TypeError,
         # typing
         Any=Any,
-        Callable=Callable,
         ConversionFunc=ConversionFunc,
         Final=Final,
         final=final,
@@ -139,7 +146,8 @@ class {typename}(tuple):
         """Return a new {typename} object replacing specified fields with new values"""
         result = self.__class__(*map(kwargs.pop, self.fields, self))
         if kwargs:
-            raise ValueError(f"got unexpected field names: {{', '.join(kwargs)}}")
+            names = 'name' if len(kwargs) == 1 else 'names'
+            raise ValueError(f"got unexpected field {{names}} {{str(list(kwargs))[1:-1]}}")
         
         return result
 
