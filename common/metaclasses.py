@@ -95,4 +95,4 @@ class AllowInstantiation(type, metaclass=CombineMeta):
         if cls.__class__.__allow__[cls]:
             return super().__call__(*args, **kwargs)
 
-        raise TypeError(f'class {cls.__class__.__qualname__} cannot be instantiated')
+        raise TypeError(f'class {cls.__qualname__} cannot be instantiated')

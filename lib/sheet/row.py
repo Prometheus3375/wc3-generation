@@ -12,6 +12,7 @@ For better debugging, define some Row functions locally, __module__ and __qualna
     __getnewargs__
     __init_subclass__
 Ensure that qualnames of all functions are f'{class.__qualname__}{func.__name__}'
+Add final _ to all special Row attributes
 """
 
 import builtins
@@ -22,6 +23,7 @@ from collections import deque
 from io import StringIO
 from types import GenericAlias
 from typing import Any, Final, TypeVar, final
+from weakref import WeakSet
 
 from .conversions import ConversionFunc
 
@@ -45,15 +47,19 @@ _row_attributes = frozenset((
     '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
     'fields', 'column_names', 'column_conversions', 'replace', 'as_dict'
 ))
+_ignored_attributes = frozenset((
+    '__module__', '__name__', '__annotations__'
+))
 
-_ignored_attributes = frozenset(('__module__', '__name__', '__annotations__'))
+_rows = WeakSet()
 
 
 def row(typename: str,
         fields: dict[str, Any],
         col_names: tuple[str, ...],
         col_converts: tuple[ConversionFunc, ...],
-        module: str = '__main__') -> type:
+        module: str = __name__,
+        qualname: str = None) -> type:
     if not (len(fields) == len(col_names) == len(col_converts)):
         raise ValueError(f'lengths of fields, column names and column conversions must be equal, '
                          f'got {len(fields)}, {len(col_names)}, {len(col_converts)} respectively')
@@ -170,6 +176,7 @@ class {typename}(tuple):
 {getters.getvalue()}
 '''
     exec(source, globals_, locals_)
+    _rows.add(locals_[typename])
     return locals_[typename]
 
 
@@ -179,7 +186,7 @@ class RowMeta(type):
             raise TypeError(f'rows must have only one base class and this class must be {Row.__name__}')
 
         fields: dict[str, Any] = namespace.get('__annotations__', {})
-        module = namespace.get('__module__', '__main__')
+        module = namespace.get('__module__', __name__)
 
         col_names = []
         col_converts = []
@@ -225,7 +232,13 @@ class RowMeta(type):
         return row_
 
     def __call__(cls, *args, **kwargs):
-        raise TypeError(f'class {cls.__class__.__qualname__} cannot be instantiated')
+        raise TypeError(f'class {cls.__name__} cannot be instantiated')
+
+    def __subclasscheck__(self, subclass: type) -> bool:
+        return self is subclass or subclass in _rows
+
+    def __instancecheck__(self, instance: object) -> bool:
+        return instance.__class__ in _rows
 
 
 Row = type.__new__(RowMeta, 'Row', (), {})
