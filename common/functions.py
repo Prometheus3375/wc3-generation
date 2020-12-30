@@ -1,4 +1,12 @@
-from collections.abc import Callable
+"""
+TODO
+
+Report problem that pycharm suggest to import abc collections from collections
+not from collections.abc.
+Import from collections was deprecated since 3.3.
+"""
+
+from collections.abc import Callable, Collection
 from traceback import format_tb
 from typing import Any
 
@@ -35,3 +43,9 @@ def isnamedtuple(obj: tuple) -> bool:
 
 def truncate_string(s: str, max_len: int = 10) -> str:
     return s if len(s) <= max_len else f'{s[:max_len - 3]}...'
+
+
+def repr_strings(c: Collection[str], singular: str, plural: str, quotes: bool = True) -> tuple[str, str]:
+    noun = singular if len(c) == 1 else plural
+    rep = ', '.join(repr(s) for s in c) if quotes else ', '.join(c)
+    return noun, rep
