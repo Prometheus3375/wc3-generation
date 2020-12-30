@@ -1,4 +1,5 @@
-from typing import AbstractSet, ClassVar, Generic, Iterable, Iterator, TypeVar, Union, overload
+from collections.abc import Iterable, Iterator, Set
+from typing import ClassVar, Generic, TypeVar, Union, overload
 
 _T1 = TypeVar('_T1')
 _T2 = TypeVar('_T2')
@@ -6,7 +7,7 @@ _K = Union[_T1, _T2]
 _V = tuple[_T1, _T2]
 
 
-class BijectiveMapValuesView(AbstractSet[_K]):
+class BijectiveMapValuesView(Set[_K]):
     __slots__ = '_source'
 
     def __init__(self, source: 'BijectiveMap'):
@@ -25,7 +26,7 @@ class BijectiveMapValuesView(AbstractSet[_K]):
         return self._source.have_value(value)
 
 
-class BijectiveMapItemsView(AbstractSet[_V]):
+class BijectiveMapItemsView(Set[_V]):
     __slots__ = '_source'
 
     def __init__(self, source: 'BijectiveMap'):

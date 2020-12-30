@@ -8,10 +8,11 @@ Make special structure where class creation, attribute access is described to al
 
 import sys
 import timeit
+from collections.abc import Callable
 from enum import Enum, unique
 from math import sqrt
 from time import perf_counter_ns
-from typing import Any, Callable
+from typing import Any
 
 from .classes import (
     DataClass,
