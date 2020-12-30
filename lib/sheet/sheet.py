@@ -18,7 +18,7 @@ TODO
 
 """
 from types import GenericAlias
-from typing import ClassVar, Generic, Type, TypeVar, final
+from typing import ClassVar, Generic, TypeVar, final
 
 from common import isnamedtuplesubclass
 from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
@@ -39,7 +39,7 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
     transpose: ClassVar[bool]
     column_names: ClassVar[tuple[str, ...]]
     column_conversions: ClassVar[tuple[ConversionFunc, ...]]
-    row_class: ClassVar[Type[Row]]
+    row_class: ClassVar[type[Row]]
 
     __slots__ = '_rows'
 

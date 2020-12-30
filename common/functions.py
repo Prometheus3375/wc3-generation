@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from traceback import format_tb
-from typing import Any, Callable
+from typing import Any
 
 
 def exc2str(e: Exception) -> str:

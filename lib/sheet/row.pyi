@@ -1,4 +1,4 @@
-from typing import Any, Final, Type, TypeVar
+from typing import Any, Final, TypeVar
 
 from .conversions import ConversionFunc
 
@@ -12,7 +12,7 @@ class Row(tuple):
 
     def __init__(self: _T, *args: Any): ...
 
-    def __new__(cls: Type[_T], *args: Any) -> _T: ...
+    def __new__(cls: type[_T], *args: Any) -> _T: ...
 
     def replace(self: _T, /, **kwargs) -> _T: ...
 

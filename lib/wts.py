@@ -9,9 +9,10 @@ TODO
   - Это можно исправить, применив автозаполнение.
 
 """
+from collections.abc import Iterator
 from enum import Enum
 from io import StringIO
-from typing import ClassVar, Iterator, Optional, final
+from typing import ClassVar, Optional, final
 
 from common import truncate_string
 
