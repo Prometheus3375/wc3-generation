@@ -1,116 +1,137 @@
-"""
-
-TODO
-
-Возможно сделать вложенные подряды
-Переделать fields, names и conversions в names -> fields и names -> conversions
-Чтобы проверять, что объект является Row, заносить их всех в WeakRefSet
-For better debugging, define some Row functions locally, __module__ and __qualname__ of such functions must be changed
-  Function to be inside string code:
-    __init__
-    __new__
-    __getnewargs__
-    __init_subclass__
-Ensure that qualnames of all functions are f'{class.__qualname__}{func.__name__}'
-Add final _ to all special Row attributes
-In methods specify as many positional only args as possible
-
-"""
-
 import builtins
 import sys
-import typing
 from _collections import _tuplegetter
 from collections import deque
-from io import StringIO
-from types import GenericAlias
-from typing import Any, Final, TypeVar, final
+from collections.abc import Callable
+from typing import Any
 from weakref import WeakSet
 
+from common import repr_strings
+from common.typing import Annotation, GenericAlias, check_type, repr_type
 from .conversions import ConversionFunc
 
-_T = TypeVar('_T')
-
-
-def _type_check(hint: _T, msg: str, is_argument: bool = True) -> _T:
-    """
-    Check that the argument is a type hint, and return it.
-    If is_argument is True, also checks whether hint is a valid type hint argument
-    """
-    return typing._type_check(hint, msg, is_argument)
-
-
-def _type_repr(hint: _T) -> str:
-    """Return the repr() of an object, special-casing types"""
-    return typing._type_repr(hint)
-
-
 _row_attributes = frozenset((
-    '__slots__', '__init__', '__new__', '__repr__', '__getnewargs__', '__init_subclass__',
-    'fields', 'column_names', 'column_conversions', 'replace', 'as_dict'
+    # in-source methods
+    '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
+    # values
+    'fields_', 'column_names_', 'column_conversions_', 'subrows_', 'column_names_with_nested_',
+    # methods
+    '__repr__', 'replace_', 'as_dict_',
+    # class methods
+    'from_sheet_row_',
 ))
 
 _rows = WeakSet()
 
 
-def row(typename: str,
-        fields: dict[str, Any],
-        col_names: tuple[str, ...],
-        col_converts: tuple[ConversionFunc, ...],
+def _define_row_methods(row_: type['Row']) -> tuple[set[Callable], set[Callable], set[Callable]]:
+    # FIXME do something with fields_, is not all possible fields
+    def __repr__(self, /) -> str:
+        """Return a nicely formatted representation string"""
+        f2v = ', '.join(f'{f}={v!r}' for f, v in zip(self.fields_, self))
+        return f'{self.__class__.__name__}({f2v}))'
+
+    def replace_(self, /, **kwargs) -> row_:
+        result = self.__class__(*map(kwargs.pop, self.fields_, self))
+        if kwargs:
+            noun, rep = repr_strings(kwargs, 'name', 'names')
+            raise ValueError(f'got unexpected field {noun} {rep}')
+
+        return result
+
+    replace_.__doc__ = f'Return a new {row_.__name__} object replacing specified fields with new values'
+
+    def as_dict_(self, /) -> dict[str, Any]:
+        """Return a new dict which maps field names to their values"""
+        return dict(zip(self.fields_, self))
+
+    def from_sheet_row_(cls, column2value: dict[str, str], /) -> row_:
+        keys = column2value.keys()
+        all_cols = set(cls.column_names_with_nested_)
+        if keys < all_cols:
+            noun, rep = repr_strings(all_cols - keys, 'name', 'names')
+            raise ValueError(f'missing necessary column {noun} {rep}')
+        elif keys > all_cols:
+            noun, rep = repr_strings(keys - all_cols, 'name', 'names')
+            raise ValueError(f'unexpected column {noun} {rep}')
+
+        args = [convert(column2value.pop(name)) for name, convert in
+                zip(cls.column_names_, cls.column_conversions_)]
+
+        for _, subrow in cls.subrows_:
+            c2v = {name: column2value.pop(name) for name in subrow.column_names_with_nested_}
+            args.append(subrow.from_sheet_row_(c2v))
+
+        return cls(*args)
+
+    from_sheet_row_.__doc__ = f'''
+        Create a new instance of {row_.__name__} from a dictionary with column names as keys 
+        and raw content as values. 
+        Dictionary keys must be the same as {row_.__name__}.column_names_with_nested_
+    '''
+
+    return {__repr__, replace_, as_dict_}, {from_sheet_row_}, set()
+
+
+def row(
+        typename: str,
+        fields: dict[str, tuple[Annotation, str, ConversionFunc]],
+        subrows: dict[str, type['Row']],
         module: str = __name__,
-        qualname: str = None) -> type:
-    if not (len(fields) == len(col_names) == len(col_converts)):
-        raise ValueError(f'lengths of fields, column names and column conversions must be equal, '
-                         f'got {len(fields)}, {len(col_names)}, {len(col_converts)} respectively')
+        qualname: str = None
+) -> type:
+    lf = len(fields)
+    ls = len(subrows)
+    if lf + ls == 0:
+        raise ValueError(f'row must have at least one field or subrow')
+    if lf == 0 and ls == 1:
+        raise ValueError(f'row cannot consist only from one subrow')
 
-    if len(fields) == 0:
-        raise ValueError(f'row must have at least one column')
+    if common := fields.keys() & subrows.keys():
+        noun, rep = repr_strings(common, 'name', 'names')
+        raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
-    if common := _row_attributes & fields.keys():
-        attributes = 'attribute' if len(common) == 1 else 'attributes'
-        attrs = ', '.join(_row_attributes & fields.keys())
-        raise AttributeError(f'fields must not overwrite special {attributes} {attrs}')
-    del common
-
-    fields = {sys.intern(f): _type_check(t, f'field {f} annotation must be a type')
+    col_names = tuple(t[1] for t in fields.values())
+    col_conversions = tuple(t[2] for t in fields.values())
+    fields = {sys.intern(f): check_type(t[0], f'field {f} annotation must be a type')
               for f, t in fields.items()}
-    typename = sys.intern(str(typename))
+    subrows = {sys.intern(f): t for f, t in subrows.items()}
+    all_fields = fields | subrows
 
-    args_ann = ', '.join(f'{f}: {_type_repr(t)}' for f, t in fields.items())
-    args = ', '.join(fields)
+    if common := _row_attributes & all_fields.keys():
+        noun, rep = repr_strings(common, 'attribute', 'attributes')
+        raise ValueError(f'fields and subrows must not overwrite special {noun} {rep}')
+
+    typename = sys.intern(typename)
+
+    # region Check column names for duplicates in subrows and collect all column names
+    col_names_nested = {f: typename for f in col_names}
+    for sr in subrows.values():
+        for name in sr.column_names_with_nested_:
+            inserted = col_names_nested.setdefault(name, sr)
+            if inserted is not sr:
+                raise ValueError(f'{inserted} and {sr} have identical column name {name}')
+
+    col_names_nested = col_names if ls == 0 else tuple(col_names_nested)
+    # endregion
+
+    args_ann = ', '.join(f'{f}: {repr_type(t)}' for f, t in all_fields.items())
+    args = ', '.join(all_fields)
     globals_ = dict(
         # necessary
-        __builtins__={'__build_class__': builtins.__build_class__},
+        __builtins__=dict(__build_class__=builtins.__build_class__),
         __name__=module,
         # builtins
         tuple=tuple,
-        str=str,
-        map=map,
-        dict=dict,
-        zip=zip,
-        list=list,
-        len=len,
-        ValueError=ValueError,
         TypeError=TypeError,
-        # typing
-        Any=Any,
-        ConversionFunc=ConversionFunc,
-        Final=Final,
-        final=final,
-        # variables
-        _tuplegetter=_tuplegetter,
-        col_names=col_names,
-        col_converts=col_converts,
-        field_names=tuple(fields),
-    )
+    )  # TODO compare performance of kw dict and sys.intern dict
     locals_ = {}
 
     # region Add type hints to globals
-    seen = set()
-    type_hints = deque(set(fields.values()))
+    seen = set(all_fields.values())
+    type_hints = deque(seen)
     while type_hints:
         t = type_hints.popleft()
-        seen.add(t)
 
         if isinstance(t, GenericAlias):
             if t.__origin__ not in seen:
@@ -119,66 +140,80 @@ def row(typename: str,
                 if arg not in seen:
                     type_hints.append(arg)
         else:
-            r = _type_repr(t)
+            r = repr_type(t)
             if r in globals_:
                 gr = globals_[r]
                 if not (gr is t or gr == t):
-                    raise KeyError(f'type representation {r} is identical for {gr!r} and {t!r}')
+                    raise ValueError(f'type representation {r} is identical for {gr!r} and {t!r}')
             else:
                 globals_[r] = t
     # endregion
 
-    getters = StringIO()
-    for i, f in enumerate(fields):
-        doc = sys.intern(f'Alias for field number {i}')
-        getters.write(f'    {f} = _tuplegetter({i}, \'{doc}\')\n')
-
     source = f'''
-@final
 class {typename}(tuple):
     __slots__ = ()
 
-    fields: Final[tuple[str, ...]] = field_names
-    column_names: Final[tuple[str, ...]] = col_names
-    column_conversions: Final[tuple[ConversionFunc, ...]] = col_converts
-
-    def __init__(self, {args_ann}):
+    def __init__(self, /, {args_ann}):
         """Create a new instance of {typename}({args})"""
 
-    def __new__(cls, {args_ann}):
+    def __new__(cls, /, {args_ann}):
         """Create a new instance of {typename}({args})"""
         return tuple.__new__(cls, ({args},))
 
-    def replace(self, /, **kwargs) -> '{typename}':
-        """Return a new {typename} object replacing specified fields with new values"""
-        result = self.__class__(*map(kwargs.pop, self.fields, self))
-        if kwargs:
-            names = 'name' if len(kwargs) == 1 else 'names'
-            raise ValueError(f"got unexpected field {{names}} {{str(list(kwargs))[1:-1]}}")
-        
-        return result
-
-    def as_dict(self) -> dict[str, Any]:
-        """Return a new dict which maps field names to their values"""
-        return dict(zip(self.fields, self))
-
-    def __repr__(self):
-        """Return a nicely formatted representation string"""
-        return f"{typename}({{', '.join(f'{{k}}={{v!r}}' for k, v in zip(self.fields, self))}})"
-
-    def __getnewargs__(self):
+    def __getnewargs__(self, /):
         """Return self as a plain tuple. Used by copy and pickle"""
         return tuple(self)
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):
         """Raise TypeError to restrict subclassing"""
         raise TypeError(f"type {typename} is not an acceptable base type")
-
-{getters.getvalue()}
 '''
     exec(source, globals_, locals_)
-    _rows.add(locals_[typename])
-    return locals_[typename]
+    row_: type[tuple] = locals_[typename]
+    # Update qualname if any
+    if qualname:
+        row_.__qualname__ = qualname
+    else:
+        qualname = row_.__qualname__
+
+    # region Set attributes
+    setattr(row_, 'fields_', tuple(fields))
+    setattr(row_, 'column_names_', col_names)
+    setattr(row_, 'column_conversions_', col_conversions)
+    setattr(row_, 'subrows_', tuple(subrows.items()))
+    setattr(row_, 'column_names_with_nested_', col_names_nested)
+    # endregion
+
+    # region Add field getters
+    for i, f in enumerate(fields):
+        doc = sys.intern(f'Alias for field number {i}')
+        setattr(row_, f, _tuplegetter(i, doc))
+    # endregion
+
+    # region Add methods
+    methods, clsm, staticm = _define_row_methods(row_)
+    for m in methods:
+        setattr(row_, m.__name__, m)
+    for m in clsm:
+        setattr(row_, m.__name__, classmethod(m))
+    for m in staticm:
+        setattr(row_, m.__name__, staticmethod(m))
+    # endregion
+
+    # region Update __module__ and __qualname__ of all callables
+    for name in _row_attributes:
+        attr = getattr(row_, name)
+        if isinstance(attr, (classmethod, staticmethod)):
+            attr = attr.__func__
+
+        if callable(attr):
+            attr.__module__ = module
+            attr.__qualname__ = f'{qualname}.{attr.__name__}'
+    # endregion
+
+    # Add row to WeakSet of all rows
+    _rows.add(row_)
+    return row_
 
 
 class RowMeta(type):
@@ -188,24 +223,26 @@ class RowMeta(type):
     ))
     rewrite_forbidden = _row_attributes - rewrite_allowed
     ignored = frozenset((
-        '__annotations__', '__module__', '__name__', '__qualname__'
+        '__name__',
     ))
 
     def __new__(mcs, typename: str, bases: tuple, namespace: dict, **kwargs):
         if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Row):
             raise TypeError(f'rows must have only one base class and this class must be {Row.__name__}')
 
-        fields: dict[str, Any] = namespace.pop('__annotations__', {})
+        fields: dict[str, Annotation] = namespace.pop('__annotations__', {})
         module = namespace.pop('__module__', __name__)
-        # TODO add __qualname__ extraction
-        # Clean ignored set from popped attrs, iterate throigh it to pop all its contents
+        qualname = namespace.pop('__qualname__', typename)
+        for attr in mcs.ignored:
+            namespace.pop(attr, None)
 
         col_names = []
         col_converts = []
-        for field, convert in fields.items():
+        for field, annotation in fields.items():
             if field.startswith('_') or field.endswith('_'):
-                raise ValueError(f'field names must not start or end with underscore, got {field}')
+                raise ValueError(f'field names must not start and end with underscore, got {field}')
             name = field.replace('_', ' ')
+            convert = annotation
 
             if field in namespace:
                 value = namespace.pop(field)
@@ -233,12 +270,13 @@ class RowMeta(type):
             col_names.append(name)
             col_converts.append(convert)
 
-        row_ = row(typename, fields, tuple(col_names), tuple(col_converts), module)
+        # FIXME
+        row_ = row(typename, fields, tuple(col_names), tuple(col_converts), module, qualname)
 
         for attr in namespace:
             if attr in mcs.rewrite_forbidden:
-                raise AttributeError(f'cannot overwrite special {Row.__name__} attribute {attr}')
-            elif attr not in mcs.ignored:
+                raise ValueError(f'cannot overwrite special {Row.__name__} attribute {attr}')
+            else:
                 setattr(row_, attr, namespace[attr])
 
         return row_
