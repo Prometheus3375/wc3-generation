@@ -41,7 +41,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
 
         return result
 
-    replace_.__doc__ = f'Return a new {row_.__name__} object replacing specified fields with new values'
+    replace_.__doc__ = f'Return a new {row_.__name__} instance replacing specified fields with new values'
 
     def as_dict_(self, /) -> dict[str, Any]:
         """Return a new dict which maps field names to their values"""
@@ -67,7 +67,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
         return cls(*args)
 
     from_sheet_row_.__doc__ = f'''
-        Create a new instance of {row_.__name__} from a dictionary with column names as keys 
+        Create a new {row_.__name__} instance from a dictionary with column names as keys 
         and raw content as values. 
         Dictionary keys must be the same as {row_.__name__}.column_names_with_nested_
     '''
@@ -118,6 +118,7 @@ def row(
     # endregion
 
     args_ann = ', '.join(f'{f}: {repr_type(t)}' for f, t in all_fields.items())
+    ann = ', '.join(repr_type(t) for t in all_fields.values())
     args = ', '.join(all_fields)
     globals_ = dict(
         # necessary
@@ -156,13 +157,13 @@ class {typename}(tuple):
     __slots__ = ()
 
     def __init__(self, /, {args_ann}):
-        """Create a new instance of {typename}({args})"""
+        """Create a new instance of {typename}"""
 
-    def __new__(cls, /, {args_ann}):
-        """Create a new instance of {typename}({args})"""
+    def __new__(cls, /, {args_ann}) -> '{typename}':
+        """Create a new instance of {typename}"""
         return tuple.__new__(cls, ({args},))
 
-    def __getnewargs__(self, /):
+    def __getnewargs__(self, /) -> tuple[{ann}]:
         """Return self as a plain tuple. Used by copy and pickle"""
         return tuple(self)
 

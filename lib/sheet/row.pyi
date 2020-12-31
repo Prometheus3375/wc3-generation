@@ -6,14 +6,31 @@ _T = TypeVar('_T')
 
 
 class Row(tuple):
-    fields: Final[tuple[str, ...]]
-    column_names: Final[tuple[str, ...]]
-    column_conversions: Final[tuple[ConversionFunc, ...]]
+    fields_: Final[tuple[str, ...]]
+    column_names_: Final[tuple[str, ...]]
+    column_conversions_: Final[tuple[ConversionFunc, ...]]
+    subrows_: Final[tuple[tuple[str, 'Row']]]
+    column_names_with_nested_: Final[tuple[str, ...]]
 
-    def __init__(self: _T, *args: Any): ...
+    def __init__(self, /, *args: Any):
+        """Create a new instance"""
 
-    def __new__(cls: type[_T], *args: Any) -> _T: ...
+    def __new__(cls, /, *args: Any) -> 'Row':
+        """Create a new instance"""
 
-    def replace(self: _T, /, **kwargs) -> _T: ...
+    def __getnewargs__(self, /) -> tuple[Any, ...]:
+        """Return self as a plain tuple. Used by copy and pickle"""
 
-    def as_dict(self: _T) -> dict[str, Any]: ...
+    def replace_(self, /, **kwargs: Any) -> 'Row':
+        """Return a new instance replacing specified fields with new values"""
+
+    def as_dict_(self, /) -> dict[str, Any]:
+        """Return a new dict which maps field names to their values"""
+
+    @classmethod
+    def from_sheet_row_(cls, column2value: dict[str, str], /) -> 'Row':
+        """
+        Create a new instance from a dictionary with column names as keys
+        and raw content as values.
+        Dictionary keys must be the same as cls.column_names_with_nested_
+        """
