@@ -10,6 +10,8 @@ from common import repr_strings
 from common.typing import Annotation, GenericAlias, check_type, repr_type
 from .conversions import ConversionFunc
 
+# TODO suggest to take type from .pyi stub file rather than in source
+
 _row_attributes = frozenset((
     # in-source methods
     '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
@@ -20,12 +22,12 @@ _row_attributes = frozenset((
     # class methods
     'from_sheet_row_',
 ))
-
 _rows = WeakSet()
 
+_Methods = tuple[Callable, ...]
 
-def _define_row_methods(row_: type['Row']) -> tuple[set[Callable], set[Callable], set[Callable]]:
-    # FIXME do something with fields_, is not all possible fields
+
+def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods]:
     def __repr__(self, /) -> str:
         """Return a nicely formatted representation string"""
         f2v = ', '.join(f'{f}={v!r}' for f, v in zip(self.fields_, self))
@@ -70,7 +72,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[set[Callable], set[Callable]
         Dictionary keys must be the same as {row_.__name__}.column_names_with_nested_
     '''
 
-    return {__repr__, replace_, as_dict_}, {from_sheet_row_}, set()
+    return (__repr__, replace_, as_dict_), (from_sheet_row_,), ()
 
 
 def row(
@@ -177,7 +179,7 @@ class {typename}(tuple):
         qualname = row_.__qualname__
 
     # region Set attributes
-    setattr(row_, 'fields_', tuple(fields))
+    setattr(row_, 'fields_', tuple(all_fields))
     setattr(row_, 'column_names_', col_names)
     setattr(row_, 'column_conversions_', col_conversions)
     setattr(row_, 'subrows_', tuple(subrows.items()))
