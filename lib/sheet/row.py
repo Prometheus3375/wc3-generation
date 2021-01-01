@@ -99,7 +99,7 @@ def row(
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
     subrows = {sys.intern(f): t for f, t in subrows.items()}
-    all_fields = {sys.intern(f): check_type(t[0], f'field {f} annotation must be a type')
+    all_fields = {sys.intern(f): check_type(t[0], f'field {f!r} annotation must be a type')
                   for f, t in fields.items()} | subrows
     col_names = tuple(t[1].lower() for t in fields.values())
     col_conversions = tuple(t[2] for t in fields.values())
@@ -156,7 +156,7 @@ def row(
             if r in globals_:
                 gr = globals_[r]
                 if not (gr is t or gr == t):
-                    raise ValueError(f'type representation {r} is identical for {gr!r} and {t!r}')
+                    raise ValueError(f'type representation {r} is identical for {gr} and {t}')
             else:
                 globals_[r] = t
     # endregion
@@ -252,7 +252,7 @@ class RowMeta(type):
         subrows = {}
         for field, annotation in fields.items():
             if field.startswith('_') or field.endswith('_'):
-                raise ValueError(f'field names must not start and end with underscore, got {field}')
+                raise ValueError(f'field names must not start and end with underscore, got {field!r}')
             name = field.replace('_', ' ')
 
             if isinstance(annotation, type) and issubclass(annotation, Row):
@@ -265,10 +265,10 @@ class RowMeta(type):
             if field in namespace:
                 value = namespace.pop(field)
                 if not isinstance(value, tuple):
-                    raise TypeError(f'type of fields must be tuple, got {type(value)} for {field}')
+                    raise TypeError(f'type of fields must be tuple, got {type(value)} for {field!r}')
                 lv = len(value)
                 if lv == 0 or lv > 2:
-                    raise ValueError(f'length of a field tuple must be 1 or 2, got {len(value)} for {field}')
+                    raise ValueError(f'length of a field tuple must be 1 or 2, got {len(value)} for {field!r}')
 
                 if lv == 1:
                     v = value[0]
@@ -278,12 +278,12 @@ class RowMeta(type):
                         convert = v
                     else:
                         raise TypeError(f'field tuple of length 1 must contain either string or callable, '
-                                        f'got {type(v)} for {field}')
+                                        f'got {type(v)} for {field!r}')
                 else:
                     name, convert = value
                     if not (type(name) is str and callable(convert)):
                         raise TypeError(f'field tuple of length 2 must contain string and callable, '
-                                        f'got {type(name)} and {type(convert)} respectively for {field}')
+                                        f'got {type(name)} and {type(convert)} respectively for {field!r}')
 
             final_fields[field] = annotation, name, convert
 
@@ -291,7 +291,7 @@ class RowMeta(type):
 
         for attr in namespace:
             if attr in mcs.rewrite_forbidden:
-                raise ValueError(f'cannot overwrite special {Row.__name__} attribute {attr}')
+                raise ValueError(f'cannot overwrite special {Row.__name__} attribute {attr!r}')
             else:
                 setattr(row_, attr, namespace[attr])
 
