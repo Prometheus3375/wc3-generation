@@ -24,7 +24,7 @@ class MySubRow2(Row):
 
 
 class MyRow(Row):
-    name: str = 'name',
+    name: str = 'name'
     damage: float = 'damage', must_be_positive
     stat: int
     sub: MySubRow

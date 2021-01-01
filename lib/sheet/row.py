@@ -264,26 +264,21 @@ class RowMeta(type):
             convert = annotation
             if field in namespace:
                 value = namespace.pop(field)
-                if not isinstance(value, tuple):
-                    raise TypeError(f'type of fields must be tuple, got {type(value)} for {field!r}')
-                lv = len(value)
-                if lv == 0 or lv > 2:
-                    raise ValueError(f'length of a field tuple must be 1 or 2, got {len(value)} for {field!r}')
+                if type(value) is str:
+                    name = value
+                elif callable(value):
+                    convert = value
+                elif type(value) is tuple:
+                    if len(value) != 2:
+                        raise ValueError(f'length of field tuple must be 2, got {len(value)} for {field!r}')
 
-                if lv == 1:
-                    v = value[0]
-                    if type(v) is str:
-                        name = v
-                    elif callable(v):
-                        convert = v
-                    else:
-                        raise TypeError(f'field tuple of length 1 must contain either string or callable, '
-                                        f'got {type(v)} for {field!r}')
-                else:
                     name, convert = value
                     if not (type(name) is str and callable(convert)):
-                        raise TypeError(f'field tuple of length 2 must contain string and callable, '
+                        raise TypeError(f'field tuple must contain string and callable, '
                                         f'got {type(name)} and {type(convert)} respectively for {field!r}')
+                else:
+                    raise TypeError(f'field value can be string, callable or tuple, '
+                                    f'got {type(value)} for {field!r}')
 
             final_fields[field] = annotation, name, convert
 
