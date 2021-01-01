@@ -7,10 +7,28 @@ def must_be_positive(*args):
     pass
 
 
+class MySubRow(Row):
+    class MySubSubRow(Row):
+        hehe: int
+        hoho: str
+
+    one: int
+    two: int
+    three: int
+    sub: MySubSubRow
+
+
+class MySubRow2(Row):
+    four: int
+    six: int
+
+
 class MyRow(Row):
     name: str = 'name',
     damage: float = 'damage', must_be_positive
     stat: int
+    sub: MySubRow
+    sub2: MySubRow2
 
 
 class MyTuple(NamedTuple):
@@ -19,7 +37,7 @@ class MyTuple(NamedTuple):
     stat: int
 
 
-r = MyRow('Hero', 10., 1)
+# r = MyRow('Hero', 10., 1)
 # r.replace(dmg=10)
 
 # Traceback (most recent call last):
