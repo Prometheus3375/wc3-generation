@@ -27,6 +27,11 @@ _rows = WeakSet()
 _Methods = tuple[Callable, ...]
 
 
+def _repr_type(a) -> str:
+    """Replaces all dots with underscore and strips initial underscores"""
+    return repr_type(a).replace('.', '_').lstrip('_')
+
+
 def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods]:
     def __repr__(self, /) -> str:
         """Return a nicely formatted representation string"""
@@ -93,12 +98,11 @@ def row(
         noun, rep = repr_strings(common, 'name', 'names')
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
-    col_names = tuple(t[1] for t in fields.values())
-    col_conversions = tuple(t[2] for t in fields.values())
-    fields = {sys.intern(f): check_type(t[0], f'field {f} annotation must be a type')
-              for f, t in fields.items()}
     subrows = {sys.intern(f): t for f, t in subrows.items()}
-    all_fields = fields | subrows
+    all_fields = {sys.intern(f): check_type(t[0], f'field {f} annotation must be a type')
+                  for f, t in fields.items()} | subrows
+    col_names = tuple(t[1].lower() for t in fields.values())
+    col_conversions = tuple(t[2] for t in fields.values())
 
     if common := _row_attributes & all_fields.keys():
         noun, rep = repr_strings(common, 'attribute', 'attributes')
@@ -107,18 +111,23 @@ def row(
     typename = sys.intern(typename)
 
     # region Check column names for duplicates in subrows and collect all column names
+    seen = {}
     col_names_nested = {f: typename for f in col_names}
-    for sr in subrows.values():
+    for field, sr in subrows.items():
+        if sr in seen:
+            raise ValueError(f'row cannot have 2 fields of the same subrow, '
+                             f'got {sr.__qualname__} for fields {seen[sr]!r} and {field!r}')
+        seen[sr] = field
         for name in sr.column_names_with_nested_:
             inserted = col_names_nested.setdefault(name, sr)
             if inserted is not sr:
-                raise ValueError(f'{inserted} and {sr} have identical column name {name}')
+                raise ValueError(f'{inserted} and {sr} have identical column name {name!r}')
 
     col_names_nested = col_names if ls == 0 else tuple(col_names_nested)
     # endregion
 
-    args_ann = ', '.join(f'{f}: {repr_type(t)}' for f, t in all_fields.items())
-    ann = ', '.join(repr_type(t) for t in all_fields.values())
+    args_ann = ', '.join(f'{f}: {_repr_type(t)}' for f, t in all_fields.items())
+    ann = ', '.join(_repr_type(t) for t in all_fields.values())
     args = ', '.join(all_fields)
     globals_ = dict(
         # necessary
@@ -143,7 +152,7 @@ def row(
                 if arg not in seen:
                     type_hints.append(arg)
         else:
-            r = repr_type(t)
+            r = _repr_type(t)
             if r in globals_:
                 gr = globals_[r]
                 if not (gr is t or gr == t):
@@ -188,7 +197,7 @@ class {typename}(tuple):
     # endregion
 
     # region Add field getters
-    for i, f in enumerate(fields):
+    for i, f in enumerate(all_fields):
         doc = sys.intern(f'Alias for field number {i}')
         setattr(row_, f, _tuplegetter(i, doc))
     # endregion
@@ -205,7 +214,7 @@ class {typename}(tuple):
 
     # region Update __module__ and __qualname__ of all callables
     for name in _row_attributes:
-        attr = getattr(row_, name)
+        attr = row_.__dict__[name]
         if isinstance(attr, (classmethod, staticmethod)):
             attr = attr.__func__
 
@@ -239,14 +248,20 @@ class RowMeta(type):
         for attr in mcs.ignored:
             namespace.pop(attr, None)
 
-        col_names = []
-        col_converts = []
+        final_fields = {}
+        subrows = {}
         for field, annotation in fields.items():
             if field.startswith('_') or field.endswith('_'):
                 raise ValueError(f'field names must not start and end with underscore, got {field}')
             name = field.replace('_', ' ')
-            convert = annotation
 
+            if isinstance(annotation, type) and issubclass(annotation, Row):
+                if field in namespace:
+                    raise ValueError(f'subrows must not have a value, got {namespace[field]!r} for subrow {field!r}')
+                subrows[field] = annotation
+                continue
+
+            convert = annotation
             if field in namespace:
                 value = namespace.pop(field)
                 if not isinstance(value, tuple):
@@ -270,11 +285,9 @@ class RowMeta(type):
                         raise TypeError(f'field tuple of length 2 must contain string and callable, '
                                         f'got {type(name)} and {type(convert)} respectively for {field}')
 
-            col_names.append(name)
-            col_converts.append(convert)
+            final_fields[field] = annotation, name, convert
 
-        # FIXME
-        row_ = row(typename, fields, tuple(col_names), tuple(col_converts), module, qualname)
+        row_ = row(typename, final_fields, subrows, module, qualname)
 
         for attr in namespace:
             if attr in mcs.rewrite_forbidden:
