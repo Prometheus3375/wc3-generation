@@ -1,11 +1,11 @@
 import builtins
-import sys
 from _collections import _tuplegetter
 from collections.abc import Callable
+from sys import intern
 from typing import Any
 from weakref import WeakSet
 
-from common import repr_collection
+from common import frozendict, repr_collection
 from common.typing import Annotation
 from .conversions import ConversionFunc
 
@@ -36,7 +36,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
         result = self.__class__(*map(kwargs.pop, self.fields_, self))
         if kwargs:
             noun, rep = repr_collection(kwargs, 'name', 'names')
-            raise ValueError(f'got unexpected field {noun} {rep}')
+            raise ValueError(f'unexpected field {noun} {rep}')
 
         return result
 
@@ -48,7 +48,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
 
     def from_sheet_row_(cls, column2value: dict[str, str], /) -> row_:
         keys = column2value.keys()
-        all_cols = set(cls.column_names_with_nested_)
+        all_cols = cls.column_names_with_nested_
         if keys < all_cols:
             noun, rep = repr_collection(all_cols - keys, 'name', 'names')
             raise ValueError(f'missing necessary column {noun} {rep}')
@@ -57,9 +57,9 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
             raise ValueError(f'unexpected column {noun} {rep}')
 
         args = [convert(column2value.pop(name)) for name, convert in
-                zip(cls.column_names_, cls.column_conversions_)]
+                zip(cls.column_names_.values(), cls.column_conversions_.values())]
 
-        for _, subrow in cls.subrows_:
+        for subrow in cls.subrows_.values():
             c2v = {name: column2value.pop(name) for name in subrow.column_names_with_nested_}
             args.append(subrow.from_sheet_row_(c2v))
 
@@ -76,28 +76,29 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
 
 def row(
         typename: str,
-        fields: dict[str, tuple[Annotation, str, ConversionFunc]],
-        subrows: dict[str, type['Row']],
+        fields_: dict[str, tuple[Annotation, str, ConversionFunc]],
+        subrows_: dict[str, type['Row']],
         module: str = __name__,
         qualname: str = None
 ) -> type:
-    lf = len(fields)
-    ls = len(subrows)
+    lf = len(fields_)
+    ls = len(subrows_)
     if lf + ls == 0:
         raise ValueError(f'row must have at least one field or subrow')
     if lf == 0 and ls == 1:
         raise ValueError(f'row cannot consist only from one subrow')
 
-    if common := fields.keys() & subrows.keys():
+    if common := fields_.keys() & subrows_.keys():
         noun, rep = repr_collection(common, 'name', 'names')
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
-    subrows = {sys.intern(f): t for f, t in subrows.items()}
-    field2annotation = {sys.intern(f): t[0] for f, t in fields.items()} | subrows
-    col_names = tuple(sys.intern(t[1].lower()) for t in fields.values())
-    col_conversions = tuple(t[2] for t in fields.values())
+    subrows = frozendict((intern(f), t) for f, t in subrows_.items())
+    fields = frozendict((intern(f), t[0]) for f, t in fields_.items()) | subrows_
+    col_names = frozendict((intern(f), intern(t[1].lower())) for f, t in fields_.items())
+    col_conversions = frozendict((intern(f), t[2]) for f, t in fields_.items())
+    del fields_, subrows_
 
-    if common := _row_attributes & field2annotation.keys():
+    if common := _row_attributes & fields.keys():
         noun, rep = repr_collection(common, 'attribute', 'attributes')
         raise ValueError(f'fields and subrows must not overwrite special {noun} {rep}')
 
@@ -114,11 +115,11 @@ def row(
             if inserted is not sr:
                 raise ValueError(f'{inserted} and {sr} have identical column name {name!r}')
 
-    col_names_nested = col_names if ls == 0 else tuple(col_names_nested)
+    col_names_nested = frozenset(col_names_nested)
     # endregion
 
-    typename = sys.intern(typename)
-    args = ', '.join(field2annotation)
+    typename = intern(typename)
+    args = ', '.join(fields)
     globals_ = dict(
         # necessary
         __builtins__=dict(__build_class__=builtins.__build_class__),
@@ -155,22 +156,22 @@ class {typename}(tuple):
         row_.__qualname__ = qualname
     else:
         qualname = row_.__qualname__
-    # Update method annotations
-    row_.__init__.__annotations__ = field2annotation.copy()
-    row_.__new__.__annotations__ = {**field2annotation, 'return': row_}
-    row_.__getnewargs__.__annotations__ = {'return': tuple[tuple(field2annotation.values())]}
+    # Update annotations
+    row_.__annotations__ = row_.__init__.__annotations__ = dict(fields)
+    row_.__new__.__annotations__ = {**fields, 'return': row_}
+    row_.__getnewargs__.__annotations__ = {'return': tuple[tuple(fields.values())]}
 
     # region Set attributes
-    setattr(row_, 'fields_', tuple(field2annotation))
+    setattr(row_, 'fields_', tuple(fields))
     setattr(row_, 'column_names_', col_names)
     setattr(row_, 'column_conversions_', col_conversions)
-    setattr(row_, 'subrows_', tuple(subrows.items()))
+    setattr(row_, 'subrows_', subrows)
     setattr(row_, 'column_names_with_nested_', col_names_nested)
     # endregion
 
     # region Add field getters
-    for i, f in enumerate(field2annotation):
-        doc = sys.intern(f'Alias for field number {i}')
+    for i, f in enumerate(fields):
+        doc = intern(f'Alias for field number {i}')
         setattr(row_, f, _tuplegetter(i, doc))
     # endregion
 
