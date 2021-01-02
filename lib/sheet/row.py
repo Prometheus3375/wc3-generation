@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any
 from weakref import WeakSet
 
-from common import repr_strings
+from common import repr_collection
 from common.typing import Annotation
 from .conversions import ConversionFunc
 
@@ -35,7 +35,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
     def replace_(self, /, **kwargs) -> row_:
         result = self.__class__(*map(kwargs.pop, self.fields_, self))
         if kwargs:
-            noun, rep = repr_strings(kwargs, 'name', 'names')
+            noun, rep = repr_collection(kwargs, 'name', 'names')
             raise ValueError(f'got unexpected field {noun} {rep}')
 
         return result
@@ -50,10 +50,10 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
         keys = column2value.keys()
         all_cols = set(cls.column_names_with_nested_)
         if keys < all_cols:
-            noun, rep = repr_strings(all_cols - keys, 'name', 'names')
+            noun, rep = repr_collection(all_cols - keys, 'name', 'names')
             raise ValueError(f'missing necessary column {noun} {rep}')
         elif keys > all_cols:
-            noun, rep = repr_strings(keys - all_cols, 'name', 'names')
+            noun, rep = repr_collection(keys - all_cols, 'name', 'names')
             raise ValueError(f'unexpected column {noun} {rep}')
 
         args = [convert(column2value.pop(name)) for name, convert in
@@ -89,7 +89,7 @@ def row(
         raise ValueError(f'row cannot consist only from one subrow')
 
     if common := fields.keys() & subrows.keys():
-        noun, rep = repr_strings(common, 'name', 'names')
+        noun, rep = repr_collection(common, 'name', 'names')
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
     subrows = {sys.intern(f): t for f, t in subrows.items()}
@@ -98,7 +98,7 @@ def row(
     col_conversions = tuple(t[2] for t in fields.values())
 
     if common := _row_attributes & field2annotation.keys():
-        noun, rep = repr_strings(common, 'attribute', 'attributes')
+        noun, rep = repr_collection(common, 'attribute', 'attributes')
         raise ValueError(f'fields and subrows must not overwrite special {noun} {rep}')
 
     # region Check column names for duplicates in subrows and collect all column names
