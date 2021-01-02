@@ -23,7 +23,7 @@ class BijectiveMapValuesView(Set[_K]):
             yield v2
 
     def __contains__(self, value: _K) -> bool:
-        return self._source.have_value(value)
+        return self._source.has_value(value)
 
 
 class BijectiveMapItemsView(Set[_V]):
