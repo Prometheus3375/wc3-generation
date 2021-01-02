@@ -1,5 +1,6 @@
 from typing import Any, Final, TypeVar
 
+from common import frozendict
 from .conversions import ConversionFunc
 
 _T = TypeVar('_T')
@@ -7,10 +8,10 @@ _T = TypeVar('_T')
 
 class Row(tuple):
     fields_: Final[tuple[str, ...]]
-    column_names_: Final[tuple[str, ...]]
-    column_conversions_: Final[tuple[ConversionFunc, ...]]
-    subrows_: Final[tuple[tuple[str, 'Row']]]
-    column_names_with_nested_: Final[tuple[str, ...]]
+    column_names_: Final[frozendict[str, str]]
+    column_conversions_: Final[frozendict[str, ConversionFunc]]
+    subrows_: Final[frozendict[str, 'Row']]
+    column_names_with_nested_: Final[frozenset[str]]
 
     def __init__(self, /, *args: Any):
         """Create a new instance"""
