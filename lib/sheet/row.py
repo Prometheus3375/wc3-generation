@@ -1,13 +1,12 @@
 import builtins
 import sys
 from _collections import _tuplegetter
-from collections import deque
 from collections.abc import Callable
 from typing import Any
 from weakref import WeakSet
 
 from common import repr_strings
-from common.typing import Annotation, GenericAlias, check_type, repr_type
+from common.typing import Annotation
 from .conversions import ConversionFunc
 
 # TODO suggest to take type from .pyi stub file rather than in source
@@ -25,11 +24,6 @@ _row_attributes = frozenset((
 _rows = WeakSet()
 
 _Methods = tuple[Callable, ...]
-
-
-def _repr_type(a) -> str:
-    """Replaces all dots with underscore and strips initial underscores"""
-    return repr_type(a).replace('.', '_').lstrip('_')
 
 
 def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods]:
@@ -99,16 +93,13 @@ def row(
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
     subrows = {sys.intern(f): t for f, t in subrows.items()}
-    all_fields = {sys.intern(f): check_type(t[0], f'field {f!r} annotation must be a type')
-                  for f, t in fields.items()} | subrows
-    col_names = tuple(t[1].lower() for t in fields.values())
+    field2annotation = {sys.intern(f): t[0] for f, t in fields.items()} | subrows
+    col_names = tuple(sys.intern(t[1].lower()) for t in fields.values())
     col_conversions = tuple(t[2] for t in fields.values())
 
-    if common := _row_attributes & all_fields.keys():
+    if common := _row_attributes & field2annotation.keys():
         noun, rep = repr_strings(common, 'attribute', 'attributes')
         raise ValueError(f'fields and subrows must not overwrite special {noun} {rep}')
-
-    typename = sys.intern(typename)
 
     # region Check column names for duplicates in subrows and collect all column names
     seen = {}
@@ -126,9 +117,8 @@ def row(
     col_names_nested = col_names if ls == 0 else tuple(col_names_nested)
     # endregion
 
-    args_ann = ', '.join(f'{f}: {_repr_type(t)}' for f, t in all_fields.items())
-    ann = ', '.join(_repr_type(t) for t in all_fields.values())
-    args = ', '.join(all_fields)
+    typename = sys.intern(typename)
+    args = ', '.join(field2annotation)
     globals_ = dict(
         # necessary
         __builtins__=dict(__build_class__=builtins.__build_class__),
@@ -139,40 +129,18 @@ def row(
     )  # TODO compare performance of kw dict and sys.intern dict
     locals_ = {}
 
-    # region Add type hints to globals
-    seen = set(all_fields.values())
-    type_hints = deque(seen)
-    while type_hints:
-        t = type_hints.popleft()
-
-        if isinstance(t, GenericAlias):
-            if t.__origin__ not in seen:
-                type_hints.append(t.__origin__)
-            for arg in t.__args__:
-                if arg not in seen:
-                    type_hints.append(arg)
-        else:
-            r = _repr_type(t)
-            if r in globals_:
-                gr = globals_[r]
-                if not (gr is t or gr == t):
-                    raise ValueError(f'type representation {r} is identical for {gr} and {t}')
-            else:
-                globals_[r] = t
-    # endregion
-
     source = f'''
 class {typename}(tuple):
     __slots__ = ()
 
-    def __init__(self, /, {args_ann}):
+    def __init__(self, /, {args}):
         """Create a new instance of {typename}"""
 
-    def __new__(cls, /, {args_ann}) -> '{typename}':
+    def __new__(cls, /, {args}):
         """Create a new instance of {typename}"""
         return tuple.__new__(cls, ({args},))
 
-    def __getnewargs__(self, /) -> tuple[{ann}]:
+    def __getnewargs__(self, /):
         """Return self as a plain tuple. Used by copy and pickle"""
         return tuple(self)
 
@@ -187,9 +155,13 @@ class {typename}(tuple):
         row_.__qualname__ = qualname
     else:
         qualname = row_.__qualname__
+    # Update method annotations
+    row_.__init__.__annotations__ = field2annotation.copy()
+    row_.__new__.__annotations__ = {**field2annotation, 'return': row_}
+    row_.__getnewargs__.__annotations__ = {'return': tuple[tuple(field2annotation.values())]}
 
     # region Set attributes
-    setattr(row_, 'fields_', tuple(all_fields))
+    setattr(row_, 'fields_', tuple(field2annotation))
     setattr(row_, 'column_names_', col_names)
     setattr(row_, 'column_conversions_', col_conversions)
     setattr(row_, 'subrows_', tuple(subrows.items()))
@@ -197,7 +169,7 @@ class {typename}(tuple):
     # endregion
 
     # region Add field getters
-    for i, f in enumerate(all_fields):
+    for i, f in enumerate(field2annotation):
         doc = sys.intern(f'Alias for field number {i}')
         setattr(row_, f, _tuplegetter(i, doc))
     # endregion

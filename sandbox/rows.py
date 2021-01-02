@@ -60,12 +60,12 @@ t = MyTuple('Hero', 10., 1)
 # ValueError: Got unexpected field names: ['u']
 
 
-class IT:
-    def __iter__(self):
-        raise NotImplementedError(f'not implemented')
-
-
-MyRow.fields = IT()
+# class IT:
+#     def __iter__(self):
+#         raise NotImplementedError(f'not implemented')
+#
+#
+# MyRow.fields_ = IT()
 # repr(r)
 
 # Traceback (most recent call last):
