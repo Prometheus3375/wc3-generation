@@ -240,7 +240,7 @@ class RowMeta(type):
 
     def __new__(mcs, typename: str, bases: tuple, namespace: dict, **kwargs):
         if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Row):
-            raise TypeError(f'rows must have only one base class and this class must be {Row.__name__}')
+            raise TypeError(f'row must have only one base class and this class must be {Row.__name__}')
 
         fields: dict[str, Annotation] = namespace.pop('__annotations__', {})
         module = namespace.pop('__module__', __name__)
@@ -252,12 +252,12 @@ class RowMeta(type):
         subrows = {}
         for field, annotation in fields.items():
             if field.startswith('_') or field.endswith('_'):
-                raise ValueError(f'field names must not start and end with underscore, got {field!r}')
+                raise ValueError(f'field name must not start and end with underscore, got {field!r}')
             name = field.replace('_', ' ')
 
             if isinstance(annotation, type) and issubclass(annotation, Row):
                 if field in namespace:
-                    raise ValueError(f'subrows must not have a value, got {namespace[field]!r} for subrow {field!r}')
+                    raise ValueError(f'subrow field must not have value, got {namespace[field]!r} for subrow {field!r}')
                 subrows[field] = annotation
                 continue
 
@@ -273,12 +273,15 @@ class RowMeta(type):
                         raise ValueError(f'length of field tuple must be 2, got {len(value)} for {field!r}')
 
                     name, convert = value
-                    if not (type(name) is str and callable(convert)):
-                        raise TypeError(f'field tuple must contain string and callable, '
-                                        f'got {type(name)} and {type(convert)} respectively for {field!r}')
+                    if type(name) is not str:
+                        raise TypeError(f'1st value of field tuple must be string, got {type(name)} for {field!r}')
+                    if not callable(convert):
+                        raise ValueError(f'2nd value of field tuple must be callable, got {convert!r} for {field!r}')
                 else:
                     raise TypeError(f'field value can be string, callable or tuple, '
-                                    f'got {type(value)} for {field!r}')
+                                    f'got {value!r} of type {type(value)} for {field!r}')
+            elif not callable(convert):
+                raise ValueError(f'field annotation must be callable if no value is assigned, got {convert!r}')
 
             final_fields[field] = annotation, name, convert
 
