@@ -45,7 +45,7 @@ def truncate_string(s: str, max_len: int = 10) -> str:
     return s if len(s) <= max_len else f'{s[:max_len - 3]}...'
 
 
-def repr_strings(c: Collection[str], singular: str, plural: str, quotes: bool = True) -> tuple[str, str]:
-    noun = singular if len(c) == 1 else plural
-    rep = ', '.join(repr(s) for s in c) if quotes else ', '.join(c)
-    return noun, rep
+def repr_collection(c: Collection, singular: str, plural: str, /, delimiter: str = ', ', use_repr: bool = True) -> \
+        tuple[str, str]:
+    func = repr if use_repr else str
+    return singular if len(c) == 1 else plural, delimiter.join(func(o) for o in c)
