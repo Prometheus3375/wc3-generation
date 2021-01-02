@@ -12,6 +12,7 @@ Annotation = typing.Union[
     Typing_GenericAlias,
     SpecialForm,
     typing.TypeVar,
+    typing.ForwardRef
     # may be incomplete
 ]
 
