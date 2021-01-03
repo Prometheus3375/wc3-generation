@@ -18,7 +18,7 @@ class frozendict(Generic[_K, _V_co]):
     @overload
     def __init__(self, /, **kwargs: _V_co): ...
     @overload
-    def __init__(self, map_: SupportsKeysAndGetItem, /, **kwargs: _V_co): ...
+    def __init__(self, map_: SupportsKeysAndGetItem[_K, _V_co], /, **kwargs: _V_co): ...
     @overload
     def __init__(self, iterable: Iterable[tuple[_K, _V_co]], /, **kwargs: _V_co): ...
 
@@ -51,10 +51,10 @@ class frozendict(Generic[_K, _V_co]):
     def fromkeys(cls, iterable: Iterable, value=None, /):
         return cls(tuple((k, value) for k in iterable))
 
-    def keys(self, /) -> KeysView[_K, _V_co]:
+    def keys(self, /) -> KeysView[_K]:
         return self._source.keys()
 
-    def values(self, /) -> ValuesView[_K, _V_co]:
+    def values(self, /) -> ValuesView[_V_co]:
         return self._source.values()
 
     def items(self, /) -> ItemsView[_K, _V_co]:
