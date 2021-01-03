@@ -82,10 +82,10 @@ class frozendict(Generic[_K, _V_co]):
         return reversed(self._source)
 
     def __or__(self, other: Mapping[_K, _V_co], /) -> 'frozendict[_K, _V_co]':
-        return self.__class__(self._source | other)
+        return self.__class__(chain(self._source.items(), other.items()))
 
-    def __ror__(self, other: Mapping[_K, _V_co], /) -> Mapping[_K, _V_co]:
-        return other.__class__(chain(other.items(), self._source.items()))
+    def __ror__(self, other: Mapping[_K, _V_co], /) -> 'frozendict[_K, _V_co]':
+        return self.__class__(chain(other.items(), self._source.items()))
 
     def __eq__(self, other, /):
         return self._source == other
