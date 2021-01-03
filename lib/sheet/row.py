@@ -94,7 +94,7 @@ def row(
 
     subrows = frozendict((intern(f), t) for f, t in subrows_.items())
     fields = frozendict((intern(f), t[0]) for f, t in fields_.items()) | subrows_
-    col_names = frozendict((intern(f), intern(t[1].lower())) for f, t in fields_.items())
+    col_names = frozendict((intern(f), intern(t[1].strip().lower())) for f, t in fields_.items())
     col_conversions = frozendict((intern(f), t[2]) for f, t in fields_.items())
     del fields_, subrows_
 
