@@ -6,7 +6,7 @@ not from collections.abc.
 Import from collections was deprecated since 3.3.
 """
 
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Set
 from traceback import format_tb
 from typing import Any
 
@@ -45,7 +45,19 @@ def truncate_string(s: str, max_len: int = 10) -> str:
     return s if len(s) <= max_len else f'{s[:max_len - 3]}...'
 
 
-def repr_collection(c: Collection, singular: str, plural: str, /, delimiter: str = ', ', use_repr: bool = True) -> \
+def repr_collection(c: Collection, singular: str, plural: str, /, *, delimiter: str = ', ', use_repr: bool = True) -> \
         tuple[str, str]:
     func = repr if use_repr else str
     return singular if len(c) == 1 else plural, delimiter.join(func(o) for o in c)
+
+
+def set_mismatch_message(correct: Set, incorrect: Set, missing_msg: str, unexpected_msg: str,
+                         singular: str, plural: str, /, *, delimiter: str = '; ') -> str:
+    msg = []
+    if set_ := correct - incorrect:
+        noun, rep = repr_collection(set_, singular, plural)
+        msg.append(f'{missing_msg} {noun} {rep}')
+    if set_ := incorrect - correct:
+        noun, rep = repr_collection(set_, singular, plural)
+        msg.append(f'{unexpected_msg} {noun} {rep}')
+    return delimiter.join(msg)
