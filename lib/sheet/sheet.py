@@ -2,27 +2,19 @@
 
 TODO
 
-Использовать статические классы (синглтоны, обычные классы) для репрезентации листов.
-
 Иметь абстрактный  класс для листов с методами на извлечение строки, ряда, отдельной ячейки и т. п. При определении
 подкласса делать проверки для требуемых полей. Для создания объекта будет передаваться матрица, которая при
 необходимости будет транспонирована. Будут проверены названия колонок и их количество. После этого каждый ряд будет
 прочитан, его значения будут сконвертированы в нужный тип и переданы в класс-ряд (именованный кортеж). При ошибке
 конвертации выдавать ячейку, в которой произошла ошибка.
 
-Изменить Sheet под новый Row:
-    - оставить только поля transpose и row_class
-    - добавить поля sheet_name и sheet_index
-    - сделать Sheet синглтоном и удалить SingletonSheet
-    - обновить __init_subclass__ соответсвующе
-
 """
 from types import GenericAlias
 from typing import ClassVar, Generic, TypeVar, final
 
-from common import isnamedtuplesubclass
+from gspread import Spreadsheet
+
 from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
-from .conversions import ConversionFunc
 from .row import Row
 
 
@@ -32,13 +24,14 @@ class SheetDefinitionError(Exception):
 
 
 _Row_co = TypeVar('_Row_co', covariant=True)
-_SheetMeta = combine(EmptySlotsByDefaults, AllowInstantiation)
+_SheetMeta = combine(EmptySlotsByDefaults, AllowInstantiation, Singleton)
 
 
 class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
+    spreadsheet: ClassVar[Spreadsheet]
+    index: ClassVar[int]
+    title: ClassVar[str]
     transpose: ClassVar[bool]
-    column_names: ClassVar[tuple[str, ...]]
-    column_conversions: ClassVar[tuple[ConversionFunc, ...]]
     row_class: ClassVar[type[Row]]
 
     __slots__ = '_rows'
@@ -46,29 +39,48 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
     def __init__(self):
         pass
 
-    def __init_subclass__(cls, *, special: bool = False, **kwargs):
+    def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        if not isinstance(special, bool):
-            raise TypeError(f'special argument must be bool, got {type(special)}')
+        fullname = f'{cls.__module__}.{cls.__qualname__}'
 
-        if special: return
+        # region Check spreadsheet
+        if hasattr(cls, 'spreadsheet'):
+            if not isinstance(cls.spreadsheet, Spreadsheet):
+                raise SheetDefinitionError(f'{fullname}.spreadsheet must be instance of {Spreadsheet}, '
+                                           f'got {type(cls.spreadsheet)}')
+        else:
+            raise SheetDefinitionError(f'sheet {fullname} does not have spreadsheet')
 
+        # Check index and title
+        has_index = hasattr(cls, 'index')
+        if has_index:
+            if type(cls.index) is not int:
+                raise SheetDefinitionError(f'{fullname}.index must be integer, got {type(cls.index)}')
+            elif cls.index < 0:
+                raise SheetDefinitionError(f'{fullname}.index must be non-negative integer, got {cls.index}')
+        else:
+            cls.index = None
+
+        if hasattr(cls, 'title'):
+            if type(cls.title) is not str:
+                raise SheetDefinitionError(f'{fullname}.title must be string, got {type(cls.title)}')
+            elif len(cls.title) == 0:
+                raise SheetDefinitionError(f'{fullname}.title must not be empty')
+        elif has_index:
+            cls.title = None
+        else:
+            cls.title = cls.__name__
+        # endregion
+
+        # Get transpose value
         if hasattr(cls, 'transpose'):
             if not isinstance(cls.transpose, bool):
-                raise SheetDefinitionError(f'sheet {cls.__qualname__} has non-bool value in transpose attribute')
+                raise SheetDefinitionError(f'sheet {fullname} has non-bool value in transpose attribute')
         else:
             cls.transpose = False
 
-        if not hasattr(cls, 'column_names'):
-            raise SheetDefinitionError(f'sheet {cls.__qualname__} does not have column names')
-
-        for index, name in enumerate(cls.column_names):
-            if not isinstance(name, str):
-                raise SheetDefinitionError(f'sheet {cls.__qualname__} has non-string value '
-                                           f'in column names at index {index}')
-
-        # Extract row container class
+        # region Extract and check row container class
         if hasattr(cls, '__orig_bases__'):
             orig_bases: tuple[GenericAlias, ...] = cls.__orig_bases__
             for base in orig_bases:
@@ -76,31 +88,15 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
                     cls.row_class = base.__args__[0]
                     break
         elif not hasattr(cls, 'row_class'):
-            raise SheetDefinitionError(f'sheet {cls.__qualname__} does not have a row container class; '
-                                       f'please, specify row container class when subclassing, i. e. '
+            raise SheetDefinitionError(f'sheet {fullname} does not have row container class; '
+                                       f'specify row container class when subclassing, i. e. '
                                        f'class YourSheet(Sheet[YourRowContainer])')
 
         if not isinstance(cls.row_class, type):
-            raise SheetDefinitionError(f'sheet {cls.__qualname__} has non-class row container, '
+            raise SheetDefinitionError(f'sheet {fullname} has non-class row container, '
                                        f'its type is {type(cls.row_class)}')
 
-        # Define column conversions
-        if not hasattr(cls, 'column_conversions'):
-            if isnamedtuplesubclass(cls.row_class):
-                cls.column_conversions = tuple(typ for typ in cls.row_class.__annotations__.values())
-            else:
-                raise SheetDefinitionError(f'sheet {cls.__qualname__} does not have column conversions; '
-                                           f'please, specify them in column_conversions class attribute')
-
-        for index, func in enumerate(cls.column_conversions):
-            if not callable(func):
-                raise SheetDefinitionError(f'sheet {cls.__qualname__} has non-callable object '
-                                           f'in column conversions at index {index}')
-
-        # Check column names and conversions length
-        if len(cls.column_names) != len(cls.column_conversions):
-            raise SheetDefinitionError(f'sheet {cls.__qualname__} has different number of column names and conversions')
-
-
-class SingletonSheet(Sheet[_Row_co], metaclass=type(Sheet) @ Singleton, special=True, allow_instances=False):
-    pass
+        if not issubclass(cls.row_class, Row):
+            raise SheetDefinitionError(f'row container must be subclass of {Row.__name__}, '
+                                       f'got {cls.row_class} for sheet {fullname}')
+        # endregion
