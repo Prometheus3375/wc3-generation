@@ -36,10 +36,10 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
 
     __slots__ = '_rows'
 
-    def __init__(self):
+    def __init__(self, /):
         pass
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         if cls is not Sheet:
             raise TypeError(f'type {cls.__name__!r} is not an acceptable base type')
 
