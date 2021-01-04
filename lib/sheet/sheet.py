@@ -9,12 +9,31 @@ TODO
 конвертации выдавать ячейку, в которой произошла ошибка.
 
 """
-from typing import ClassVar, Generic, TypeVar, final
+from collections.abc import Iterator, Sequence
+from typing import ClassVar, Generic, Optional, TypeVar, final
+from weakref import WeakKeyDictionary
 
-from gspread import Spreadsheet
+from gspread import Spreadsheet, Worksheet
 
-from common.metaclasses import AllowInstantiation, EmptySlotsByDefaults, Singleton, combine
+from common import set_mismatch_message
+from common.metaclasses import EmptySlotsByDefaults
+from .functions import _index2column
 from .row import Row
+from .wrapper import SpreadsheetWrapper
+
+
+class _SheetMeta(EmptySlotsByDefaults):
+    __instances__ = WeakKeyDictionary()
+
+    def __call__(cls, /, *, refetch: bool = False):
+        if cls is Sheet:
+            raise TypeError(f'class {cls.__name__} cannot be instantiated')
+
+        instances = cls.__class__.__instances__
+        if refetch or cls not in instances:
+            instances[cls] = super().__call__(refetch=refetch)
+
+        return instances[cls]
 
 
 @final
@@ -22,30 +41,133 @@ class SheetDefinitionError(Exception):
     __module__ = 'builtins'  # https://stackoverflow.com/a/19419825
 
 
+@final
+class SheetIdentificationError(Exception):
+    __module__ = 'builtins'
+
+
+@final
+class SheetParsingError(Exception):
+    __module__ = 'builtins'
+
+
 _Row_co = TypeVar('_Row_co', covariant=True)
-_SheetMeta = combine(EmptySlotsByDefaults, AllowInstantiation, Singleton)
 
 
-class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
+class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
     spreadsheet: ClassVar[Spreadsheet]
     index: ClassVar[int]
     title: ClassVar[str]
     transpose: ClassVar[bool]
     row_class: ClassVar[type[Row]]
 
-    __slots__ = '_rows'
+    __slots__ = '_rows',
 
-    def __init__(self, /):
-        pass
+    def __init__(self, /, *, refetch: bool = False):
+        wrapper = SpreadsheetWrapper(self.spreadsheet)
+        if refetch:
+            wrapper.refetch()
+
+        # region Evaluate appropriate sheet
+        sheet_title: Optional[Worksheet] = None
+        if self.title is not None:
+            sheet_title = wrapper.get(self.title.lower())
+            if sheet_title is None:
+                raise SheetIdentificationError(f'spreadsheet {wrapper.source.title!r} does not have '
+                                               f'sheet {self.title!r}')
+
+        sheet_index: Optional[Worksheet] = None
+        if self.index is not None:
+            sheet_index = wrapper.get(self.index)
+            if sheet_index is None:
+                sheets = '1 sheet' if len(wrapper) == 1 else f'{len(wrapper)} sheets'
+                raise SheetIdentificationError(f'spreadsheet {wrapper.source.title!r} has {sheets}, '
+                                               f'got index {self.index}')
+
+        if not (sheet_index is sheet_title or sheet_index is None or sheet_title is None):
+            raise SheetIdentificationError(f'sheet number {self.index} has title {sheet_index.title!r}, '
+                                           f'not {self.title!r}')
+
+        # noinspection PyTypeChecker
+        sheet: Worksheet = sheet_title if sheet_index is None else sheet_index
+        self.__class__.title = sheet.title
+        # endregion
+
+        self._rows = tuple(self._parse_values(sheet.get_all_values()))
+
+    @classmethod
+    def column(cls, index: int) -> str:
+        if index <= 0:
+            raise ValueError(f'column index must be positive, got {index}')
+
+        if cls.transpose:
+            return str(index)
+
+        return _index2column(index)
+
+    @classmethod
+    def row(cls, index: int) -> str:
+        if index <= 0:
+            raise ValueError(f'row index must be positive, got {index}')
+
+        if cls.transpose:
+            return _index2column(index)
+
+        return str(index)
+
+    @classmethod
+    def cell(cls, col: int, row: int) -> str:
+        if cls.transpose:
+            return f'{cls.row(row)}{cls.column(col)}'
+
+        return f'{cls.column(col)}{cls.row(row)}'
+
+    @classmethod
+    def _parse_values(cls, values: list[Sequence[str]], /) -> Iterator[_Row_co]:
+        columns = 'columns'
+        if cls.transpose:
+            values = list(zip(*values))
+            columns = 'rows'
+
+        # region Process names
+        names: dict[str, int] = {}
+        for i, name in enumerate(values[0], 1):
+            name = name.strip().lower()
+            if len(name) == 0:
+                continue
+
+            ins = names.setdefault(name, i)
+            if ins != i:
+                raise SheetParsingError(f'title repeated in {columns} {cls.column(i)} and {cls.column(ins)}')
+
+        row_class: type[Row] = cls.row_class
+        if (keys := names.keys()) != (titles := row_class.titles2conversions_.keys()):
+            msg = set_mismatch_message(titles, keys, 'misses necessary', 'has unexpected', 'title', 'titles')
+            raise SheetParsingError(f'sheet {cls.title!r} {msg}')
+        # endregion
+
+        values = values[1:]
+        for j, row in enumerate(values, 2):
+            args = {}
+            for name, i in names.items():
+                value = row[i - 1].strip()
+                convert = row_class.titles2conversions_[name]
+                try:
+                    value = convert(value)
+                except Exception as e:
+                    raise SheetParsingError(f'{e.__class__.__name__} at cell {cls.cell(i, j)}: {e}')
+
+                args[name] = value
+
+            yield row_class.from_titles_(args)
 
     def __init_subclass__(cls, /):
-        bases = cls.__bases__
-        if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Sheet):
+        if len(bases := cls.__bases__) != 1 or (len(bases) > 1 and bases[0] is not Sheet):
             raise TypeError(f'sheet must have only one base class and this class must be {Sheet.__name__!r}')
 
         fullname = f'{cls.__module__}.{cls.__qualname__}'
 
-        # region Check spreadsheet
+        # Check spreadsheet
         if hasattr(cls, 'spreadsheet'):
             if not isinstance(cls.spreadsheet, Spreadsheet):
                 raise SheetDefinitionError(f'{fullname}.spreadsheet must be instance of {Spreadsheet}, '
@@ -53,7 +175,7 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
         else:
             raise SheetDefinitionError(f'sheet {fullname} does not have spreadsheet')
 
-        # Check index and title
+        # region Check index and title
         has_index = hasattr(cls, 'index')
         if has_index:
             if type(cls.index) is not int:
