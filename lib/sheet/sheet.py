@@ -39,8 +39,9 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
     def __init__(self):
         pass
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    def __init_subclass__(cls):
+        if cls is not Sheet:
+            raise TypeError(f'type {cls.__name__!r} is not an acceptable base type')
 
         fullname = f'{cls.__module__}.{cls.__qualname__}'
 
