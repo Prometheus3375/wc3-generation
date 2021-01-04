@@ -9,7 +9,6 @@ TODO
 конвертации выдавать ячейку, в которой произошла ошибка.
 
 """
-from types import GenericAlias
 from typing import ClassVar, Generic, TypeVar, final
 
 from gspread import Spreadsheet
@@ -40,8 +39,9 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
         pass
 
     def __init_subclass__(cls, /):
-        if cls is not Sheet:
-            raise TypeError(f'type {cls.__name__!r} is not an acceptable base type')
+        bases = cls.__bases__
+        if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Sheet):
+            raise TypeError(f'sheet must have only one base class and this class must be {Sheet.__name__!r}')
 
         fullname = f'{cls.__module__}.{cls.__qualname__}'
 
@@ -83,11 +83,7 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta, allow_instances=False):
 
         # region Extract and check row container class
         if hasattr(cls, '__orig_bases__'):
-            orig_bases: tuple[GenericAlias, ...] = cls.__orig_bases__
-            for base in orig_bases:
-                if issubclass(base.__origin__, Sheet):
-                    cls.row_class = base.__args__[0]
-                    break
+            cls.row_class = cls.__orig_bases__[0].__args__[0]
         elif not hasattr(cls, 'row_class'):
             raise SheetDefinitionError(f'sheet {fullname} does not have row container class; '
                                        f'specify row container class when subclassing, i. e. '
