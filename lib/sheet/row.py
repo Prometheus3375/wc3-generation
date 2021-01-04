@@ -145,9 +145,9 @@ class {typename}(tuple):
         """Return self as a plain tuple. Used by copy and pickle"""
         return tuple(self)
 
-    def __init_subclass__(cls, /, **kwargs):
+    def __init_subclass__(cls, /):
         """Raise TypeError to restrict subclassing"""
-        raise TypeError(f"type {typename} is not an acceptable base type")
+        raise TypeError(f"type {typename!r} is not an acceptable base type")
 '''
     exec(source, globals_, locals_)
     row_: type[tuple] = locals_[typename]

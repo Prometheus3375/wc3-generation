@@ -38,8 +38,8 @@ class CombineMeta(type):
     def __rmatmul__(self, other):
         return combine(other, self)
 
-    def __init_subclass__(mcs, **kwargs):
-        raise TypeError(f'type {CombineMeta.__name__} is not an acceptable base type')
+    def __init_subclass__(mcs):
+        raise TypeError(f'type {CombineMeta.__name__!r} is not an acceptable base type')
 
 
 class Singleton(type, metaclass=CombineMeta):
