@@ -5,22 +5,24 @@ from sys import intern
 from typing import Any
 from weakref import WeakSet
 
-from common import frozendict, repr_collection
+from common import frozendict, repr_collection, set_mismatch_message
 from common.typing import Annotation
 from .conversions import ConversionFunc
 
 # TODO suggest to take type from .pyi stub file rather than in source
+# TODO add special attribute ignored_columns_
 
 _row_attributes = frozenset((
     # in-source methods
     '__slots__', '__init__', '__new__', '__getnewargs__', '__init_subclass__',
     # values
-    'fields_', 'column_names_', 'column_conversions_', 'subrows_', 'column_names_with_nested_',
+    'fields_', 'titles_', 'subrows_', 'titles2conversions_',
     # methods
     '__repr__', 'replace_', 'as_dict_',
     # class methods
-    'from_sheet_row_',
+    'from_titles_',
 ))
+_forbidden_field_names = frozenset(('self', 'cls'))
 _rows = WeakSet()
 
 _Methods = tuple[Callable, ...]
@@ -46,32 +48,28 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
         """Return a new dict which maps field names to their values"""
         return dict(zip(self.fields_, self))
 
-    def from_sheet_row_(cls, column2value: dict[str, str], /) -> row_:
-        keys = column2value.keys()
-        all_cols = cls.column_names_with_nested_
-        if keys < all_cols:
-            noun, rep = repr_collection(all_cols - keys, 'name', 'names')
-            raise ValueError(f'missing necessary column {noun} {rep}')
-        elif keys > all_cols:
-            noun, rep = repr_collection(keys - all_cols, 'name', 'names')
-            raise ValueError(f'unexpected column {noun} {rep}')
+    def from_titles_(cls, title2value: dict[str, Any], /) -> row_:
+        keys = title2value.keys()
+        all_cols = cls.titles2conversions_.keys()
+        if keys != all_cols:
+            raise ValueError(
+                set_mismatch_message(all_cols, keys, 'missing necessary column', 'unexpected column', 'title', 'titles')
+            )
 
-        args = [convert(column2value.pop(name)) for name, convert in
-                zip(cls.column_names_.values(), cls.column_conversions_.values())]
+        args = [title2value.pop(name) for name in cls.titles_.values()]
 
         for subrow in cls.subrows_.values():
-            c2v = {name: column2value.pop(name) for name in subrow.column_names_with_nested_}
-            args.append(subrow.from_sheet_row_(c2v))
+            c2v = {name: title2value.pop(name) for name in subrow.titles2conversions_.keys()}
+            args.append(subrow.from_titles_(c2v))
 
         return cls(*args)
 
-    from_sheet_row_.__doc__ = f'''
-        Create a new {row_.__name__} instance from a dictionary with column names as keys 
-        and raw content as values. 
-        Dictionary keys must be the same as {row_.__name__}.column_names_with_nested_
+    from_titles_.__doc__ = f'''
+        Create a new {row_.__name__} instance from a dictionary with column titles as keys. 
+        Dictionary keys must be the same as {row_.__name__}.titles2conversions_.keys()
     '''
 
-    return (__repr__, replace_, as_dict_), (from_sheet_row_,), ()
+    return (__repr__, replace_, as_dict_), (from_titles_,), ()
 
 
 def row(
@@ -92,30 +90,42 @@ def row(
         noun, rep = repr_collection(common, 'name', 'names')
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
-    subrows = frozendict((intern(f), t) for f, t in subrows_.items())
-    fields = frozendict((intern(f), t[0]) for f, t in fields_.items()) | subrows_
-    col_names = frozendict((intern(f), intern(t[1].strip().lower())) for f, t in fields_.items())
-    col_conversions = frozendict((intern(f), t[2]) for f, t in fields_.items())
+    fields_ = {intern(k): v for k, v in fields_.items()}
+
+    subrows = frozendict({intern(k): v for k, v in subrows_.items()})
+    fields = frozendict({f: t[0] for f, t in fields_.items()}) | subrows_
+    titles = frozendict({f: intern(t[1].strip().lower()) for f, t in fields_.items()})
+    conversions = frozendict({tit: tup[2] for tit, tup in zip(titles.values(), fields_.values())})
     del fields_, subrows_
 
     if common := _row_attributes & fields.keys():
         noun, rep = repr_collection(common, 'attribute', 'attributes')
-        raise ValueError(f'fields and subrows must not overwrite special {noun} {rep}')
+        raise ValueError(f'fields must not overwrite special {noun} {rep}')
 
-    # region Check column names for duplicates in subrows and collect all column names
+    if common := _forbidden_field_names & fields.keys():
+        noun, rep = repr_collection(common, 'word', 'words')
+        names = 'name' if len(common) == 1 else 'names'
+        raise ValueError(f'special {noun} {rep} cannot be used as field {names}')
+
+    # region Check column names for duplicates in subrows and collect all column titles
     seen = {}
-    col_names_nested = {f: typename for f in col_names}
+    all_titles = {tit: typename for tit in conversions.keys()}
     for field, sr in subrows.items():
         if sr in seen:
             raise ValueError(f'row cannot have 2 fields of the same subrow, '
                              f'got {sr.__qualname__} for fields {seen[sr]!r} and {field!r}')
         seen[sr] = field
-        for name in sr.column_names_with_nested_:
-            inserted = col_names_nested.setdefault(name, sr)
+        for name in sr.titles2conversions_:
+            inserted = all_titles.setdefault(name, sr)
             if inserted is not sr:
-                raise ValueError(f'{inserted} and {sr} have identical column name {name!r}')
+                if isinstance(inserted, str):
+                    if qualname:
+                        inserted = qualname
+                    inserted = f'<class \'{module}.{inserted}\'>'
+                raise ValueError(f'{inserted} and {sr} have identical column title {name!r}')
 
-    col_names_nested = frozenset(col_names_nested)
+    for sr in subrows.values():
+        conversions = conversions | sr.titles2conversions_
     # endregion
 
     typename = intern(typename)
@@ -163,10 +173,9 @@ class {typename}(tuple):
 
     # region Set attributes
     setattr(row_, 'fields_', tuple(fields))
-    setattr(row_, 'column_names_', col_names)
-    setattr(row_, 'column_conversions_', col_conversions)
+    setattr(row_, 'titles_', titles)
     setattr(row_, 'subrows_', subrows)
-    setattr(row_, 'column_names_with_nested_', col_names_nested)
+    setattr(row_, 'titles2conversions_', conversions)
     # endregion
 
     # region Add field getters
@@ -207,8 +216,12 @@ class RowMeta(type):
         '__repr__',
     ))
     rewrite_forbidden = _row_attributes - rewrite_allowed
-    ignored = frozenset((
+    ignored_attributes = frozenset((
         '__name__',
+    ))
+    # Annotations
+    ignored_annotations = frozenset((
+        '__prefix__', '__postfix__'
     ))
 
     def __new__(mcs, typename: str, bases: tuple, namespace: dict, **kwargs):
@@ -218,14 +231,19 @@ class RowMeta(type):
         fields: dict[str, Annotation] = namespace.pop('__annotations__', {})
         module = namespace.pop('__module__', __name__)
         qualname = namespace.pop('__qualname__', typename)
-        for attr in mcs.ignored:
+        for attr in mcs.ignored_attributes:
             namespace.pop(attr, None)
+        for ann in mcs.ignored_annotations:
+            fields.pop(ann, None)
+
+        prefix = namespace.get('__prefix__', '')
+        postfix = namespace.get('__postfix__', '')
 
         final_fields = {}
         subrows = {}
         for field, annotation in fields.items():
-            if field.startswith('_') or field.endswith('_'):
-                raise ValueError(f'field name must not start and end with underscore, got {field!r}')
+            if field.startswith('_'):
+                raise ValueError(f'field name must not start with underscore, got {field!r}')
             name = field.replace('_', ' ')
 
             if isinstance(annotation, type) and issubclass(annotation, Row):
@@ -256,7 +274,7 @@ class RowMeta(type):
             elif not callable(convert):
                 raise ValueError(f'field annotation must be callable if no value is assigned, got {convert!r}')
 
-            final_fields[field] = annotation, name, convert
+            final_fields[field] = annotation, f'{prefix}{name}{postfix}', convert
 
         row_ = row(typename, final_fields, subrows, module, qualname)
 
