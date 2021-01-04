@@ -2,10 +2,7 @@ _alphabet_offset = ord('A') - 1
 _alphabet_len = ord('Z') - ord('A') + 1
 
 
-def index2column(index: int) -> str:
-    if index <= 0:
-        raise ValueError(f'Column index must be positive, got {index}')
-
+def _index2column(index: int, /) -> str:
     name = []
     while index > _alphabet_len:
         rem = index % _alphabet_len
@@ -19,13 +16,20 @@ def index2column(index: int) -> str:
     return ''.join(reversed(name))
 
 
-def column2index(column: str) -> int:
+def index2column(index: int, /) -> str:
+    if index <= 0:
+        raise ValueError(f'column index must be positive, got {index}')
+
+    return _index2column(index)
+
+
+def column2index(column: str, /) -> int:
     if len(column) == 0:
-        raise ValueError(f'Column name must consist of upper latin letters, got empty string')
+        raise ValueError(f'column must consist of upper latin letters, got empty string')
 
     for c in column:
         if not c.isupper():
-            raise ValueError(f'Column name must consist of upper latin letters, got {column}')
+            raise ValueError(f'column must consist of upper latin letters, got {column}')
 
     result = 0
     pw = 1
