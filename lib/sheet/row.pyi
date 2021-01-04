@@ -8,10 +8,9 @@ _T = TypeVar('_T')
 
 class Row(tuple):
     fields_: Final[tuple[str, ...]]
-    column_names_: Final[frozendict[str, str]]
-    column_conversions_: Final[frozendict[str, ConversionFunc]]
+    titles_: Final[frozendict[str, str]]
     subrows_: Final[frozendict[str, 'Row']]
-    column_names_with_nested_: Final[frozenset[str]]
+    titles2conversions_: Final[frozendict[str, ConversionFunc]]
 
     def __init__(self, /, *args: Any):
         """Create a new instance"""
@@ -29,9 +28,8 @@ class Row(tuple):
         """Return a new dict which maps field names to their values"""
 
     @classmethod
-    def from_sheet_row_(cls, column2value: dict[str, str], /) -> 'Row':
+    def from_titles_(cls, title2value: dict[str, Any], /) -> 'Row':
         """
-        Create a new instance from a dictionary with column names as keys
-        and raw content as values.
-        Dictionary keys must be the same as cls.column_names_with_nested_
+        Create a new instance from a dictionary with column titles as keys.
+        Dictionary keys must be the same as cls.titles2conversions_.keys()
         """
