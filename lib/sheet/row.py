@@ -1,12 +1,12 @@
 import builtins
 from _collections import _tuplegetter
 from collections.abc import Callable
-from sys import intern
-from typing import Any
+from sys import intern, modules
+from typing import Any, Union
 from weakref import WeakSet
 
 from common import frozendict, repr_collection, set_mismatch_message
-from common.typing import Annotation
+from common.typing import Annotation, eval_hint
 from .conversions import ConversionFunc
 
 # TODO suggest to take type from .pyi stub file rather than in source
@@ -217,22 +217,21 @@ class RowMeta(type):
     ))
     rewrite_forbidden = _row_attributes - rewrite_allowed
     ignored_attributes = frozenset((
-        '__name__',
+        '__name__', '__annotations__', '__module__', '__qualname__',
     ))
     # Annotations
     ignored_annotations = frozenset((
         '__prefix__', '__postfix__'
     ))
 
-    def __new__(mcs, typename: str, bases: tuple, namespace: dict, **kwargs):
+    def __new__(mcs, typename: str, bases: tuple, namespace: dict, /):
         if len(bases) != 1 or (len(bases) > 1 and bases[0] is not Row):
             raise TypeError(f'row must have only one base class and this class must be {Row.__name__}')
 
-        fields: dict[str, Annotation] = namespace.pop('__annotations__', {})
-        module = namespace.pop('__module__', __name__)
-        qualname = namespace.pop('__qualname__', typename)
-        for attr in mcs.ignored_attributes:
-            namespace.pop(attr, None)
+        fields: dict[str, Union[Annotation, str]] = namespace.get('__annotations__', {})
+        module = namespace.get('__module__', __name__)
+        module_globals = modules[module].__dict__
+        qualname = namespace.get('__qualname__', typename)
         for ann in mcs.ignored_annotations:
             fields.pop(ann, None)
 
@@ -245,6 +244,9 @@ class RowMeta(type):
             if field.startswith('_'):
                 raise ValueError(f'field name must not start with underscore, got {field!r}')
             name = field.replace('_', ' ')
+
+            if isinstance(annotation, str):
+                annotation = eval_hint(annotation, module_globals, namespace)
 
             if isinstance(annotation, type) and issubclass(annotation, Row):
                 if field in namespace:
@@ -267,16 +269,21 @@ class RowMeta(type):
                     if type(name) is not str:
                         raise TypeError(f'1st value of field tuple must be string, got {type(name)} for {field!r}')
                     if not callable(convert):
-                        raise ValueError(f'2nd value of field tuple must be callable, got {convert!r} for {field!r}')
+                        raise ValueError(f'2nd value of field tuple must be callable, '
+                                         f'got {convert!r} of type {type(convert)} for {field!r}')
                 else:
                     raise TypeError(f'field value can be string, callable or tuple, '
                                     f'got {value!r} of type {type(value)} for {field!r}')
             elif not callable(convert):
-                raise ValueError(f'field annotation must be callable if no value is assigned, got {convert!r}')
+                raise ValueError(f'field annotation must be callable if no value is assigned, '
+                                 f'got {convert!r} of type {type(convert)} for {field!r}')
 
             final_fields[field] = annotation, f'{prefix}{name}{postfix}', convert
 
         row_ = row(typename, final_fields, subrows, module, qualname)
+
+        for attr in mcs.ignored_attributes:
+            namespace.pop(attr, None)
 
         for attr in namespace:
             if attr in mcs.rewrite_forbidden:
@@ -286,13 +293,13 @@ class RowMeta(type):
 
         return row_
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, /, *args, **kwargs):
         raise TypeError(f'class {cls.__name__} cannot be instantiated')
 
-    def __subclasscheck__(self, subclass: type) -> bool:
+    def __subclasscheck__(self, subclass: type, /) -> bool:
         return self is subclass or subclass in _rows
 
-    def __instancecheck__(self, instance: object) -> bool:
+    def __instancecheck__(self, instance: object, /) -> bool:
         return instance.__class__ in _rows
 
 
