@@ -13,7 +13,7 @@ _S = TypeVar('_S')
 # noinspection PyArgumentList
 class frozendict(Generic[_K, _V_co]):
     __slots__ = '_source', '_hash'
-    _dummy = object()
+    _no_arg = object()
 
     @overload
     def __init__(self, /, **kwargs: _V_co): ...
@@ -34,8 +34,8 @@ class frozendict(Generic[_K, _V_co]):
     @overload
     def get(self, key: _K, default: Union[_V_co, _T], /) -> Union[_V_co, _T]: ...
 
-    def get(self, key, default=_dummy, /):
-        if default is self._dummy:
+    def get(self, key, default=_no_arg, /):
+        if default is self._no_arg:
             return self._source.get(key)
 
         return self._source.get(key, default)
@@ -98,3 +98,6 @@ class frozendict(Generic[_K, _V_co]):
 
     def __getnewargs__(self, /):
         return tuple(self.items())
+
+
+Mapping.register(frozendict)
