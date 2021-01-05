@@ -1,9 +1,9 @@
-import types
 import typing
 from collections.abc import Iterable
+from types import GenericAlias as _GenericAlias
 from typing import Final, ForwardRef, Protocol, TypeVar, Union
 
-Types_GenericAlias = types.GenericAlias
+Types_GenericAlias = _GenericAlias
 Typing_GenericAlias = type(Final[int])
 SpecialForm = type(Union)
 GenericAlias = Types_GenericAlias, Typing_GenericAlias  # for isinstance() and issubclass()
@@ -35,6 +35,19 @@ def check_type(typ: Annotation, msg: str, is_argument: bool = True) -> Annotatio
 def repr_type(a: Annotation) -> str:
     """Return the repr() of an annotation"""
     return typing._type_repr(a)
+
+
+def eval_type(obj: Annotation, globals_: dict, locals_: dict, recursive_guard: frozenset = frozenset()) -> Annotation:
+    """
+    Evaluate all forward references in the given type t.
+    For use of globals_ and locals_ see the docstring for get_type_hints().
+    recursive_guard is used to prevent infinite recursion with recursive ForwardRef.
+    """
+    return typing._eval_type(obj, globals_, locals_, recursive_guard)
+
+
+def eval_hint(hint: str, /, globals_: dict = None, locals_: dict = None):
+    return ForwardRef(hint, False)._evaluate(globals_, locals_, frozenset())
 
 
 class SupportsKeysAndGetItem(Protocol[_K, _V_co]):
