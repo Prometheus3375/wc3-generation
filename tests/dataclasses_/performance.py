@@ -1,11 +1,3 @@
-"""
-
-TODO
-
-Make special structure where class creation, attribute access is described to allow easy tests
-
-"""
-
 import sys
 import timeit
 from collections.abc import Callable
@@ -24,6 +16,8 @@ from .classes import (
     ObjectNoSlots,
 )
 
+
+# TODO Make special structure where class creation, attribute access is described to allow easy tests
 
 @unique
 class Measure(Enum):

@@ -1,11 +1,3 @@
-"""
-TODO
-
-Report problem that pycharm suggest to import abc collections from collections
-not from collections.abc.
-Import from collections was deprecated since 3.3.
-"""
-
 from collections.abc import Callable, Collection, Iterable
 from traceback import format_tb
 from typing import Any, Union
