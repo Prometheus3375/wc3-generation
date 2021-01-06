@@ -75,37 +75,36 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
 def row(
         typename: str,
         fields_: dict[str, tuple[Annotation, str, ConversionFunc]],
-        subrows_: dict[str, type['Row']],
+        subrows: dict[str, type['Row']],
         module: str = __name__,
         qualname: str = None
 ) -> type:
     lf = len(fields_)
-    ls = len(subrows_)
+    ls = len(subrows)
     if lf + ls == 0:
         raise ValueError(f'row must have at least one field or subrow')
     if lf == 0 and ls == 1:
         raise ValueError(f'row cannot consist only from one subrow')
 
-    if common := fields_.keys() & subrows_.keys():
+    if common := fields_.keys() & subrows.keys():
         noun, rep = repr_collection(common, 'name', 'names')
         raise ValueError(f'field {noun} {rep} is duplicated in subrows')
 
     fields_ = {intern(k): v for k, v in fields_.items()}
 
-    subrows = frozendict({intern(k): v for k, v in subrows_.items()})
-    fields = frozendict({f: t[0] for f, t in fields_.items()}) | subrows_
-    titles = frozendict({f: intern(t[1].strip().lower()) for f, t in fields_.items()})
-    conversions = frozendict({tit: tup[2] for tit, tup in zip(titles.values(), fields_.values())})
-    del fields_, subrows_
+    subrows = {intern(k): v for k, v in subrows.items()}
+    fields = {f: t[0] for f, t in fields_.items()} | subrows
+    titles = {f: intern(t[1].strip().lower()) for f, t in fields_.items()}
+    conversions = {tit: tup[2] for tit, tup in zip(titles.values(), fields_.values())}
+    del fields_
 
     if common := _row_attributes & fields.keys():
         noun, rep = repr_collection(common, 'attribute', 'attributes')
         raise ValueError(f'fields must not overwrite special {noun} {rep}')
 
     if common := _forbidden_field_names & fields.keys():
-        noun, rep = repr_collection(common, 'word', 'words')
-        names = 'name' if len(common) == 1 else 'names'
-        raise ValueError(f'special {noun} {rep} cannot be used as field {names}')
+        (word, name), rep = repr_collection(common, ('word', 'name'), ('words', 'names'))
+        raise ValueError(f'special {word} {rep} cannot be used as field {name}')
 
     # region Check column names for duplicates in subrows and collect all column titles
     seen = {}
@@ -125,7 +124,7 @@ def row(
                 raise ValueError(f'{inserted} and {sr} have identical column title {name!r}')
 
     for sr in subrows.values():
-        conversions = conversions | sr.titles2conversions_
+        conversions |= sr.titles2conversions_
     # endregion
 
     typename = intern(typename)
@@ -167,15 +166,16 @@ class {typename}(tuple):
     else:
         qualname = row_.__qualname__
     # Update annotations
-    row_.__annotations__ = row_.__init__.__annotations__ = dict(fields)
+    row_.__annotations__ = fields
+    row_.__init__.__annotations__ = fields.copy()
     row_.__new__.__annotations__ = {**fields, 'return': row_}
     row_.__getnewargs__.__annotations__ = {'return': tuple[tuple(fields.values())]}
 
     # region Set attributes
     setattr(row_, 'fields_', tuple(fields))
-    setattr(row_, 'titles_', titles)
-    setattr(row_, 'subrows_', subrows)
-    setattr(row_, 'titles2conversions_', conversions)
+    setattr(row_, 'titles_', frozendict(titles))
+    setattr(row_, 'subrows_', frozendict(subrows))
+    setattr(row_, 'titles2conversions_', frozendict(conversions))
     # endregion
 
     # region Add field getters
