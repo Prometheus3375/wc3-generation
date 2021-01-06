@@ -5,7 +5,7 @@ from sys import intern, modules
 from typing import Any, Union
 from weakref import WeakSet
 
-from common import frozendict, repr_collection, set_mismatch_message
+from common import frozendict, repr_collection
 from common.typing import Annotation, eval_hint
 from .conversions import ConversionFunc
 
@@ -32,7 +32,7 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
     def __repr__(self, /) -> str:
         """Return a nicely formatted representation string"""
         f2v = ', '.join(f'{f}={v!r}' for f, v in zip(self.fields_, self))
-        return f'{self.__class__.__name__}({f2v}))'
+        return f'{self.__class__.__name__}({f2v})'
 
     def replace_(self, /, **kwargs) -> row_:
         result = self.__class__(*map(kwargs.pop, self.fields_, self))
@@ -49,17 +49,10 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
         return dict(zip(self.fields_, self))
 
     def from_titles_(cls, title2value: dict[str, Any], /) -> row_:
-        keys = title2value.keys()
-        all_cols = cls.titles2conversions_.keys()
-        if keys != all_cols:
-            raise ValueError(
-                set_mismatch_message(all_cols, keys, 'missing necessary column', 'unexpected column', 'title', 'titles')
-            )
-
         args = [title2value.pop(name) for name in cls.titles_.values()]
 
         for subrow in cls.subrows_.values():
-            c2v = {name: title2value.pop(name) for name in subrow.titles2conversions_.keys()}
+            c2v = {name: title2value.pop(name) for name in subrow.titles2conversions_}
             args.append(subrow.from_titles_(c2v))
 
         return cls(*args)

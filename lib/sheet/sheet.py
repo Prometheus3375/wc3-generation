@@ -15,7 +15,7 @@ from weakref import WeakKeyDictionary
 
 from gspread import Spreadsheet, Worksheet
 
-from common import set_mismatch_message
+from common import repr_collection
 from common.metaclasses import EmptySlotsByDefaults
 from .functions import _index2column
 from .row import Row
@@ -90,10 +90,9 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
 
         # noinspection PyTypeChecker
         sheet: Worksheet = sheet_title if sheet_index is None else sheet_index
-        self.__class__.title = sheet.title
         # endregion
 
-        self._rows = tuple(self._parse_values(sheet.get_all_values()))
+        self._rows = tuple(self.parse_values(sheet.get_all_values()))
 
     @classmethod
     def column(cls, index: int) -> str:
@@ -123,7 +122,7 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
         return f'{cls.column(col)}{cls.row(row)}'
 
     @classmethod
-    def _parse_values(cls, values: list[Sequence[str]], /) -> Iterator[_Row_co]:
+    def parse_values(cls, values: Sequence[Sequence[str]], /) -> Iterator[_Row_co]:
         columns = 'columns'
         if cls.transpose:
             values = list(zip(*values))
@@ -142,8 +141,15 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
 
         row_class: type[Row] = cls.row_class
         if (keys := names.keys()) != (titles := row_class.titles2conversions_.keys()):
-            msg = set_mismatch_message(titles, keys, 'misses necessary', 'has unexpected', 'title', 'titles')
-            raise SheetParsingError(f'sheet {cls.title!r} {msg}')
+            msg = []
+            if set_ := titles - keys:
+                noun, rep = repr_collection(set_, 'title', 'titles')
+                msg.append(f'missing necessary {noun} {rep}')
+            if set_ := keys - titles:
+                noun, rep = repr_collection(set_, 'title', 'titles')
+                msg.append(f'unexpected {noun} {rep}')
+            msg = '; '.join(msg)
+            raise SheetParsingError(f'in sheet {cls.__name__!r} {msg}')
         # endregion
 
         values = values[1:]
