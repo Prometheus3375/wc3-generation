@@ -226,7 +226,7 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
         elif has_index:
             cls.title = None
         else:
-            cls.title = cls.__name__
+            cls.title = cls.__name__.replace('_', ' ').strip()
         # endregion
 
         # Get transpose value
