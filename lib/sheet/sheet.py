@@ -40,10 +40,13 @@ class SheetParsingError(Exception):
     __module__ = 'builtins'
 
 
+def fool_pycharm(o): return o
+
+
 _Row_co = TypeVar('_Row_co', covariant=True)
 
 
-class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
+class Sheet(Generic[_Row_co], metaclass=fool_pycharm(_SheetMeta)):
     spreadsheet: ClassVar[Spreadsheet]
     index: ClassVar[int]
     title: ClassVar[str]
