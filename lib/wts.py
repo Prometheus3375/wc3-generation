@@ -1,14 +1,3 @@
-"""
-
-TODO
-
-Зарепортить баг о сбросе настройки инспекций проекта.
-
-Изменить информацию о lvl1 и посмотреть изменения:
-  - Строка удаляется и становится самой последней.
-  - Это можно исправить, применив автозаполнение.
-
-"""
 from collections.abc import Iterator
 from enum import Enum
 from io import StringIO
@@ -68,21 +57,21 @@ CommentData = tuple[CommentType, str, CommentField]
 class wtsString:
     __slots__ = '_id', '_comment', '_content'
 
-    def __init__(self, id_: int, comment: str, content: str):
+    def __init__(self, id_: int, comment: str, content: str, /):
         self._id = id_
         self._comment = comment
         self._content = content
 
     @property
-    def id(self) -> int:
+    def id(self, /) -> int:
         return self._id
 
     @property
-    def comment(self) -> str:
+    def comment(self, /) -> str:
         return self._comment
 
     @property
-    def comment_data(self) -> Optional[CommentData]:
+    def comment_data(self, /) -> Optional[CommentData]:
         comment = self.comment.strip()
         if not comment:
             return None
@@ -96,14 +85,14 @@ class wtsString:
         return typ, rawcode, field
 
     @property
-    def content(self):
+    def content(self, /):
         return self._content
 
     @content.setter
-    def content(self, value: str):
+    def content(self, value: str, /):
         self._content = value
 
-    def __str__(self) -> str:
+    def __str__(self, /) -> str:
         return (
             f'STRING {self.id}\n'
             f'{self.comment}'
@@ -112,7 +101,7 @@ class wtsString:
             '}\n\n'
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self, /) -> str:
         return (
             f'{self.__class__.__name__}('
             f'id={self._id}, '
@@ -121,22 +110,21 @@ class wtsString:
             f')'
         )
 
-    def __lt__(self, other: object):
+    def __lt__(self, other: object, /):
         if isinstance(other, self.__class__):
             return self._id < other._id
 
-        raise TypeError(f"'<' is not supported between instances "
-                        f"of '{self.__class__.__name__}' and '{other.__class__.__name__}'")
+        return NotImplemented
 
 
 @final
 class CommentMap:
     __slots__ = '_map',
 
-    def __init__(self):
+    def __init__(self, /):
         self._map: dict[CommentData, list[wtsString]] = {}
 
-    def add(self, value: wtsString) -> bool:
+    def add(self, value: wtsString, /) -> bool:
         data = value.comment_data
         if data:
             if data in self._map:
@@ -148,19 +136,19 @@ class CommentMap:
 
         return False
 
-    def __getitem__(self, item: CommentData) -> Optional[list[wtsString]]:
+    def __getitem__(self, item: CommentData, /) -> Optional[list[wtsString]]:
         return self._map.get(item, None)
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         return len(self._map)
 
-    def __contains__(self, item: CommentData) -> bool:
+    def __contains__(self, item: CommentData, /) -> bool:
         return item in self._map
 
-    def __iter__(self) -> Iterator[CommentData]:
+    def __iter__(self, /) -> Iterator[CommentData]:
         yield from self._map
 
-    def clear(self):
+    def clear(self, /):
         self._map.clear()
 
 
@@ -175,31 +163,31 @@ class wtsFile:
 
     encoding: ClassVar[str] = 'utf-8-sig'
 
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, /):
         self._filepath = filepath
         self._strings: dict[int, wtsString] = {}
         self._comment_map = CommentMap()
 
     @property
-    def filepath(self) -> str:
+    def filepath(self, /) -> str:
         return self._filepath
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         return len(self._strings)
 
-    def __contains__(self, wts: wtsString) -> bool:
+    def __contains__(self, wts: wtsString, /) -> bool:
         return wts.id in self._strings and self._strings[wts.id] is wts
 
-    def has_id(self, id_: int) -> bool:
+    def has_id(self, id_: int, /) -> bool:
         return id_ in self._strings
 
-    def __iter__(self) -> Iterator[wtsString]:
+    def __iter__(self, /) -> Iterator[wtsString]:
         yield from sorted(self._strings.values())
 
-    def __getitem__(self, id_: int) -> wtsString:
+    def __getitem__(self, id_: int, /) -> wtsString:
         return self._strings[id_]
 
-    def read(self):
+    def read(self, /):
         self._strings.clear()
         self._comment_map.clear()
         id_ = 0
@@ -235,11 +223,15 @@ class wtsFile:
 
         return self
 
-    def save(self):
+    def save(self, /):
         with open(self._filepath, 'w', encoding=self.encoding) as f:
             f.writelines(str(s) for s in self)
 
-    def find(self, typ: CommentType, rawcode: str, field: CommentField, level: int = 1) -> Optional[wtsString]:
+    def find(self, typ: CommentType, rawcode: str, field: CommentField, /, level: int = 1) -> Optional[wtsString]:
+        # Notes:
+        # If a string is changed in the editor, old string is removed, a new is appended to the end
+        # This breaks the order of multilevel strings
+        # It is possible to fix by using autofill on all levels
         strings = self._comment_map[typ, rawcode, field]
         if strings is None:
             return None
