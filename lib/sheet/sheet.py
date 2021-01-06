@@ -1,16 +1,5 @@
-"""
-
-TODO
-
-Иметь абстрактный  класс для листов с методами на извлечение строки, ряда, отдельной ячейки и т. п. При определении
-подкласса делать проверки для требуемых полей. Для создания объекта будет передаваться матрица, которая при
-необходимости будет транспонирована. Будут проверены названия колонок и их количество. После этого каждый ряд будет
-прочитан, его значения будут сконвертированы в нужный тип и переданы в класс-ряд (именованный кортеж). При ошибке
-конвертации выдавать ячейку, в которой произошла ошибка.
-
-"""
 from collections.abc import Iterator, Sequence
-from typing import ClassVar, Generic, Optional, TypeVar, final
+from typing import Any, ClassVar, Generic, Optional, TypeVar, final, overload
 from weakref import WeakKeyDictionary
 
 from gspread import Spreadsheet, Worksheet
@@ -166,6 +155,44 @@ class Sheet(Generic[_Row_co], metaclass=_SheetMeta):
                 args[name] = value
 
             yield row_class.from_titles_(args)
+
+    def __len__(self, /) -> int:
+        return len(self._rows)
+
+    @property
+    def size(self, /) -> tuple[int, int]:
+        return len(self.row_class.fields_), len(self._rows)
+
+    def __contains__(self, item: _Row_co) -> bool:
+        return item in self._rows
+
+    def __iter__(self, /) -> Iterator[_Row_co]:
+        yield from self._rows
+
+    @overload
+    def __getitem__(self, index: int, /) -> _Row_co: ...
+    @overload
+    def __getitem__(self, indexes: slice, /) -> tuple[_Row_co, ...]: ...
+    @overload
+    def __getitem__(self, cell: tuple[int, int], /) -> Any: ...
+    @overload
+    def __getitem__(self, subrow: tuple[slice, int], /) -> tuple[Any, ...]: ...
+    @overload
+    def __getitem__(self, subcol: tuple[int, slice], /) -> tuple[Any, ...]: ...
+    @overload
+    def __getitem__(self, cells: tuple[slice, slice], /) -> tuple[tuple[Any, ...], ...]: ...
+
+    def __getitem__(self, item, /):
+        if isinstance(item, tuple):
+            col, row = item
+            if isinstance(row, int):
+                return self._rows[row][col]
+            if isinstance(row, slice):
+                return tuple(r[col] for r in self._rows[row])
+
+            raise TypeError(f'sheet indices must be integers or slices, not {type(row)}')
+
+        return self._rows[item]
 
     def __init_subclass__(cls, /):
         if len(bases := cls.__bases__) != 1 or (len(bases) > 1 and bases[0] is not Sheet):

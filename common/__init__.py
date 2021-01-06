@@ -6,6 +6,5 @@ from .functions import (
     isnamedtuple,
     isnamedtuplesubclass,
     repr_collection,
-    set_mismatch_message,
     truncate_string,
 )
