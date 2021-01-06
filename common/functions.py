@@ -6,9 +6,11 @@ not from collections.abc.
 Import from collections was deprecated since 3.3.
 """
 
-from collections.abc import Callable, Collection, Set
+from collections.abc import Callable, Collection, Iterable, Set
 from traceback import format_tb
-from typing import Any
+from typing import Any, Union
+
+_IterableStr = Union[Iterable[str], str]
 
 
 def exc2str(e: Exception) -> str:
@@ -45,8 +47,8 @@ def truncate_string(s: str, max_len: int = 10) -> str:
     return s if len(s) <= max_len else f'{s[:max_len - 3]}...'
 
 
-def repr_collection(c: Collection, singular: str, plural: str, /, *, delimiter: str = ', ', use_repr: bool = True) -> \
-        tuple[str, str]:
+def repr_collection(c: Collection, singular: _IterableStr, plural: _IterableStr, /, *,
+                    delimiter: str = ', ', use_repr: bool = True) -> tuple[_IterableStr, str]:
     func = repr if use_repr else str
     return singular if len(c) == 1 else plural, delimiter.join(func(o) for o in c)
 
