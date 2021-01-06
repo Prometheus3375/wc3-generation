@@ -37,7 +37,7 @@ class BijectiveMapItemsView(Set[_V]):
         return len(self._source)
 
     def __iter__(self, /) -> Iterator[_V]:
-        return iter(self._source)
+        yield from self._source
 
     def __contains__(self, value: _V, /) -> bool:
         return value in self._source
