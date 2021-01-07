@@ -240,7 +240,7 @@ class RowMeta(type):
         for field, annotation in fields.items():
             if field.startswith('_'):
                 raise ValueError(f'field name must not start with underscore, got {field!r}')
-            name = field.replace('_', ' ')
+            name = field.replace('_', ' ').strip()
 
             if isinstance(annotation, str):
                 annotation = eval_hint(annotation, module_globals, namespace)
