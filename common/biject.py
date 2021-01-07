@@ -191,3 +191,6 @@ class BijectiveMap(Generic[_T1, _T2]):
     def __repr__(self, /):
         entries = ', '.join(repr(v) for v in self)
         return f'{self.__class__.__name__}[{entries}]'
+
+
+__all__ = [BijectiveMap.__name__]

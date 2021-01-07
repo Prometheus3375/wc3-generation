@@ -11,6 +11,7 @@ _S = TypeVar('_S')
 
 
 # noinspection PyArgumentList
+@Mapping.register
 class frozendict(Generic[_K, _V_co]):
     __slots__ = '_source', '_hash'
     _no_arg = object()
@@ -100,4 +101,4 @@ class frozendict(Generic[_K, _V_co]):
         return tuple(self.items())
 
 
-Mapping.register(frozendict)
+__all__ = [frozendict.__name__]
