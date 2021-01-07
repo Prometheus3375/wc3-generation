@@ -88,3 +88,6 @@ class MinionStats(Sheet[Stats]):
     spreadsheet = spreadsheet
     title = 'Minion Stats'
     transpose = True
+
+
+sheet = MinionStats()
