@@ -55,6 +55,10 @@ def _define_row_methods(row_: type['Row']) -> tuple[_Methods, _Methods, _Methods
             c2v = {name: title2value.pop(name) for name in subrow.titles2conversions_}
             args.append(subrow.from_titles_(c2v))
 
+        if title2value:
+            noun, rep = repr_collection(title2value, 'title', 'titles')
+            raise ValueError(f'unexpected {noun} {rep}')
+
         return cls(*args)
 
     from_titles_.__doc__ = f'''
