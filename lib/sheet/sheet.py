@@ -14,6 +14,12 @@ from .wrapper import SpreadsheetWrapper
 class _SheetMeta(EmptySlotsByDefaults):
     __instances__ = WeakKeyDictionary()
 
+    spreadsheet: Spreadsheet
+    index: int
+    title: str
+    transpose: bool
+    row_class: type[Row]
+
     def __call__(cls, /, *, refetch: bool = False):
         if cls is Sheet:
             raise TypeError(f'class {cls.__name__} cannot be instantiated')
@@ -23,6 +29,13 @@ class _SheetMeta(EmptySlotsByDefaults):
             instances[cls] = super().__call__(refetch=refetch)
 
         return instances[cls]
+
+    def __str__(self, /) -> str:
+        if self is Sheet:
+            return super().__str__()
+
+        name = self.index if self.title is None else self.title
+        return f'<Sheet {name!r} of spreadsheet {self.spreadsheet.title!r}>'
 
 
 @final
@@ -40,13 +53,23 @@ class SheetParsingError(Exception):
     __module__ = 'builtins'
 
 
-def fool_pycharm(o): return o
+def _fool_pycharm(o):
+    """
+    Return the passed object unchanged.
+    Used to force PyCharm not to perceive _SheetMeta as metaclass of Sheet.
+    This allows PyCharm to assign correct types to Sheet subclasses.
+    More about it in this issue: https://youtrack.jetbrains.com/issue/PY-46345
+
+    :param o: any object
+    :return: passed object
+    """
+    return o
 
 
 _Row_co = TypeVar('_Row_co', covariant=True)
 
 
-class Sheet(Generic[_Row_co], metaclass=fool_pycharm(_SheetMeta)):
+class Sheet(Generic[_Row_co], metaclass=_fool_pycharm(_SheetMeta)):
     spreadsheet: ClassVar[Spreadsheet]
     index: ClassVar[int]
     title: ClassVar[str]
@@ -196,6 +219,9 @@ class Sheet(Generic[_Row_co], metaclass=fool_pycharm(_SheetMeta)):
             raise TypeError(f'sheet indices must be integers or slices, not {type(row)}')
 
         return self._rows[item]
+
+    def __repr__(self, /) -> str:
+        return str(self.__class__)
 
     def __init_subclass__(cls, /):
         if len(bases := cls.__bases__) != 1 or (len(bases) > 1 and bases[0] is not Sheet):
