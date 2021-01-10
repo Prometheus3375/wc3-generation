@@ -77,7 +77,7 @@ class frozendict(Generic[_K, _V_co]):
         return item in self._source
 
     def __iter__(self, /) -> Iterator[_K]:
-        yield from self._source
+        return iter(self._source)
 
     def __reversed__(self, /) -> Iterator[_K]:
         return reversed(self._source)

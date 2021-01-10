@@ -34,7 +34,7 @@ class CommentMap:
         return item in self._map
 
     def __iter__(self, /) -> Iterator[CommentData]:
-        yield from self._map
+        return iter(self._map)
 
     def clear(self, /):
         self._map.clear()
@@ -70,7 +70,7 @@ class wtsFile:
         return id_ in self._strings
 
     def __iter__(self, /) -> Iterator[wtsString]:
-        yield from sorted(self._strings.values())
+        return iter(sorted(self._strings.values()))
 
     def __getitem__(self, id_: int, /) -> wtsString:
         return self._strings[id_]

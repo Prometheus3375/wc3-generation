@@ -23,7 +23,7 @@ class _All(MutableSet[str]):
         return name in self._set
 
     def __iter__(self) -> Iterator[str]:
-        yield from sorted(self._set)
+        return iter(sorted(self._set))
 
 
 @overload

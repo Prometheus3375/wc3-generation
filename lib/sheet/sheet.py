@@ -193,7 +193,7 @@ class Sheet(Generic[_Row_co], metaclass=_fool_pycharm(_SheetMeta)):
         return item in self._rows
 
     def __iter__(self, /) -> Iterator[_Row_co]:
-        yield from self._rows
+        return iter(self._rows)
 
     @overload
     def __getitem__(self, index: int, /) -> _Row_co: ...
