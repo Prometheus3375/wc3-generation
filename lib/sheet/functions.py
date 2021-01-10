@@ -3,6 +3,7 @@ _alphabet_len = ord('Z') - ord('A') + 1
 
 
 def _index2column(index: int, /) -> str:
+    # TODO compare performance of StringIO.getvalue()[::-1] and current implementation
     name = []
     while index > _alphabet_len:
         rem = index % _alphabet_len
