@@ -1,127 +1,79 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from io import StringIO
-from typing import ClassVar, Optional, final
+from typing import Final, final
 
-from .string import CommentData, CommentField, CommentType, wtsString
-
-
-@final
-class CommentMap:
-    __slots__ = '_map',
-
-    def __init__(self, /):
-        self._map: dict[CommentData, list[wtsString]] = {}
-
-    def add(self, value: wtsString, /) -> bool:
-        data = value.comment_data
-        if data:
-            if data in self._map:
-                self._map[data].append(value)
-            else:
-                self._map[data] = [value]
-
-            return True
-
-        return False
-
-    def __getitem__(self, item: CommentData, /) -> Optional[list[wtsString]]:
-        return self._map.get(item, None)
-
-    def __len__(self, /) -> int:
-        return len(self._map)
-
-    def __contains__(self, item: CommentData, /) -> bool:
-        return item in self._map
-
-    def __iter__(self, /) -> Iterator[CommentData]:
-        return iter(self._map)
-
-    def clear(self, /):
-        self._map.clear()
+from .storage import wtsStorage
+from .string import wtsString
 
 
 @final
-class wtsReadError(Exception):
+class wtsParsingError(Exception):
     __module__ = 'builtins'
+
+
+def parse_lines(lines: Iterable[str], /) -> Iterator[wtsString]:
+    id_ = 0
+    comment = StringIO()
+    content = StringIO()
+    outside = True  # outside of content block
+    for line in lines:
+        if outside:
+            if line.startswith('{'):
+                outside = False
+            elif line.startswith('// '):
+                comment.write(line)
+            elif line.startswith('STRING '):
+                id_ = int(line.strip()[7:])
+        elif line.startswith('}'):
+            if id_ <= 0:
+                raise wtsParsingError(f'Cannot create {wtsString.__name__} with non-positive id {id_}')
+            if content.tell() == 0:
+                raise wtsParsingError(f'Cannot create {wtsString.__name__} with empty content')
+
+            yield wtsString(id_, comment.getvalue(), content.getvalue())
+
+            id_ = 0
+            # Why recreating is better https://stackoverflow.com/a/4330829
+            comment = StringIO()
+            content = StringIO()
+            outside = True
+        else:
+            content.write(line)
 
 
 @final
 class wtsFile:
-    __slots__ = '_filepath', '_strings', '_comment_map'
+    __slots__ = '_filepath', '_storage'
 
-    encoding: ClassVar[str] = 'utf-8-sig'
+    encoding: Final[str] = 'utf-8-sig'
+
+    @classmethod
+    def parse(cls, filepath: str, /) -> Iterator[wtsString]:
+        with open(filepath, 'r', encoding=cls.encoding) as f:
+            return parse_lines(f)
 
     def __init__(self, filepath: str, /):
+        self._storage = wtsStorage(self.parse(filepath))
         self._filepath = filepath
-        self._strings: dict[int, wtsString] = {}
-        self._comment_map = CommentMap()
 
     @property
-    def filepath(self, /) -> str:
+    def filepath(self, /):
         return self._filepath
 
-    def __len__(self, /) -> int:
-        return len(self._strings)
+    @property
+    def storage(self, /):
+        return self._storage
 
-    def __contains__(self, wts: wtsString, /) -> bool:
-        return wts.id in self._strings and self._strings[wts.id] is wts
+    @storage.setter
+    def storage(self, value: wtsStorage, /):
+        self._storage = value
 
-    def has_id(self, id_: int, /) -> bool:
-        return id_ in self._strings
-
-    def __iter__(self, /) -> Iterator[wtsString]:
-        return iter(sorted(self._strings.values()))
-
-    def __getitem__(self, id_: int, /) -> wtsString:
-        return self._strings[id_]
-
-    def read(self, /):
-        self._strings.clear()
-        self._comment_map.clear()
-        id_ = 0
-        comment = StringIO()
-        content = StringIO()
-        outside = True  # outside of content block
-        with open(self._filepath, 'r', encoding=self.encoding) as f:
-            for line in f:
-                if outside:
-                    if line.startswith('{'):
-                        outside = False
-                    elif line.startswith('// '):
-                        comment.write(line)
-                    elif line.startswith('STRING '):
-                        id_ = int(line.strip()[7:])
-                elif line.startswith('}'):
-                    if id_ <= 0:
-                        raise wtsReadError(f'Cannot create {wtsString.__name__} with non-positive id: {id_}')
-                    if content.tell() == 0:
-                        raise wtsReadError(f'Cannot create {wtsString.__name__} with empty content')
-
-                    wts = wtsString(id_, comment.getvalue(), content.getvalue())
-                    self._strings[wts.id] = wts
-                    self._comment_map.add(wts)
-
-                    id_ = 0
-                    # Why recreating is better https://stackoverflow.com/a/4330829
-                    comment = StringIO()
-                    content = StringIO()
-                    outside = True
-                else:
-                    content.write(line)
-
-        return self
+    def save_as(self, filepath: str, /):
+        with open(filepath, 'w', encoding=self.encoding) as f:
+            f.writelines(str(s) for s in self._storage)
 
     def save(self, /):
-        with open(self._filepath, 'w', encoding=self.encoding) as f:
-            f.writelines(str(s) for s in self)
+        self.save_as(self._filepath)
 
-    def find(self, typ: CommentType, rawcode: str, field: CommentField, /, level: int = 1) -> Optional[wtsString]:
-        # Notes:
-        # If a string is changed in the editor, old string is removed, a new is appended to the end
-        # This breaks the order of multilevel strings
-        # It is possible to fix by using autofill on all levels
-        strings = self._comment_map[typ, rawcode, field]
-        if strings is None:
-            return None
-
-        return strings[level - 1]
+    def reset(self, /):
+        self._storage = wtsStorage(self.parse(self._filepath))
