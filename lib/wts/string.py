@@ -70,7 +70,7 @@ class wtsString:
 
     @property
     def comment_data(self, /) -> Optional[CommentData]:
-        comment = self.comment.strip()
+        comment = self._comment.strip()
         if not comment:
             return None
 
@@ -93,9 +93,9 @@ class wtsString:
     def __str__(self, /) -> str:
         return (
             f'STRING {self.id}\n'
-            f'{self.comment}'
+            f'{self._comment}'
             '{\n'
-            f'{self.content}'
+            f'{self._content}'
             '}\n\n'
         )
 
