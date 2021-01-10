@@ -5,7 +5,7 @@ from common import truncate_string
 
 
 @final
-class CommentType(Enum):
+class wtsCommentType(Enum):
     Ability = 'Abilities'
     BuffEffect = 'Buffs/Effects'
     Destructible = 'Destructibles'
@@ -16,7 +16,7 @@ class CommentType(Enum):
 
 
 @final
-class CommentField(Enum):
+class wtsCommentField(Enum):
     # Abilities
     Researchhotkey = 'Researchhotkey'
     Researchtip = 'Researchtip'
@@ -48,7 +48,7 @@ class CommentField(Enum):
     Ubertip = 'Ubertip'
 
 
-CommentData = tuple[CommentType, str, CommentField]
+_CommentData = tuple[wtsCommentType, str, wtsCommentField]
 
 
 @final
@@ -69,7 +69,7 @@ class wtsString:
         return self._comment
 
     @property
-    def comment_data(self, /) -> Optional[CommentData]:
+    def comment_data(self, /) -> Optional[_CommentData]:
         comment = self._comment.strip()
         if not comment:
             return None
