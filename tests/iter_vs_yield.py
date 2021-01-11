@@ -5,21 +5,33 @@ def iterator(t: tuple):
     return iter(t)
 
 
-def generator(t: tuple):
+def generator1(t: tuple):
     yield from t
 
 
-result = repeat('o = iterator((1, 2, 3, 4, 5, 6, 7, 8, 9))', globals_=dict(iterator=iterator))
-print(result)  # 127.1 ±   89.5 ns
-result = repeat('o = iterator((1, 2, 3, 4, 5, 6, 7, 8, 9))', globals_=dict(iterator=generator))
-print(result)  # 183.2 ±   40.6 ns
+def generator2(t: tuple):
+    for v in t:
+        yield v
 
-result = repeat('for _ in o: pass', 'o = iterator((1, 2, 3, 4, 5, 6, 7, 8, 9))', globals_=dict(iterator=iterator))
-print(result)  # 19.2 ±    7.6 ns
-result = repeat('for _ in o: pass', 'o = iterator((1, 2, 3, 4, 5, 6, 7, 8, 9))', globals_=dict(iterator=generator))
-print(result)  # 22.6 ±   11.1 ns
 
-result = repeat('for _ in iterator((1, 2, 3, 4, 5, 6, 7, 8, 9)): pass', globals_=dict(iterator=iterator))
-print(result)  # 199.7 ±   39.3 ns
-result = repeat('for _ in iterator((1, 2, 3, 4, 5, 6, 7, 8, 9)): pass', globals_=dict(iterator=generator))
-print(result)  # 478.2 ±   70.7 ns
+tup = (1, 2, 3, 4, 5, 6, 7, 8, 9)
+result = repeat('o = iterator(tup)', globals_=dict(iterator=iterator, tup=tup))
+print(result)  # 117.5 ±   32.7 ns
+result = repeat('o = iterator(tup)', globals_=dict(iterator=generator1, tup=tup))
+print(result)  # 184.1 ±   30.3 ns
+result = repeat('o = iterator(tup)', globals_=dict(iterator=generator2, tup=tup))
+print(result)  # 181.4 ±    8.0 ns
+
+result = repeat('for _ in o: pass', 'o = iterator(tup)', globals_=dict(iterator=iterator, tup=tup))
+print(result)  # 18.7 ±    0.9 ns
+result = repeat('for _ in o: pass', 'o = iterator(tup)', globals_=dict(iterator=generator1, tup=tup))
+print(result)  # 20.4 ±    1.1 ns
+result = repeat('for _ in o: pass', 'o = iterator(tup)', globals_=dict(iterator=generator2, tup=tup))
+print(result)  # 20.9 ±    1.8 ns
+
+result = repeat('for _ in iterator(tup): pass', globals_=dict(iterator=iterator, tup=tup))
+print(result)  # 195.0 ±   15.5 ns
+result = repeat('for _ in iterator(tup): pass', globals_=dict(iterator=generator1, tup=tup))
+print(result)  # 488.7 ±   79.9 ns
+result = repeat('for _ in iterator(tup): pass', globals_=dict(iterator=generator2, tup=tup))
+print(result)  # 549.7 ±   87.1 ns
