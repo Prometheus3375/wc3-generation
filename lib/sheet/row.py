@@ -140,9 +140,6 @@ def row(
 class {typename}(tuple):
     __slots__ = ()
 
-    def __init__(self, /, {args}):
-        """Create a new instance of {typename}"""
-
     def __new__(cls, /, {args}):
         """Create a new instance of {typename}"""
         return tuple.__new__(cls, ({args},))
@@ -164,8 +161,8 @@ class {typename}(tuple):
         qualname = row_.__qualname__
     # Update annotations
     row_.__annotations__ = fields
-    row_.__init__.__annotations__ = fields.copy()
     row_.__new__.__annotations__ = {**fields, 'return': row_}
+    # noinspection PyUnresolvedReferences
     row_.__getnewargs__.__annotations__ = {'return': tuple[tuple(fields.values())]}
 
     # region Set attributes
@@ -193,7 +190,7 @@ class {typename}(tuple):
 
     # region Update __module__ and __qualname__ of all callables
     for name in _row_attributes:
-        attr = row_.__dict__[name]
+        attr = row_.__dict__.get(name, None)
         if isinstance(attr, (classmethod, staticmethod)):
             attr = attr.__func__
 
