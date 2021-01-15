@@ -140,7 +140,7 @@ class Sheet(Generic[_Row_co], metaclass=_fool_pycharm(_SheetMeta)):
     def parse_values(cls, values: Sequence[Sequence[str]], /) -> Iterator[_Row_co]:
         columns = 'columns'
         if cls.transpose:
-            values = list(zip(*values))
+            values = tuple(zip(*values))
             columns = 'rows'
 
         # region Process names
