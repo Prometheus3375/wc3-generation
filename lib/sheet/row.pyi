@@ -12,9 +12,6 @@ class Row(tuple):
     subrows_: Final[frozendict[str, 'Row']]
     titles2conversions_: Final[frozendict[str, ConversionFunc]]
 
-    def __init__(self, /, *args: Any):
-        """Create a new instance"""
-
     def __new__(cls, /, *args: Any) -> 'Row':
         """Create a new instance"""
 
