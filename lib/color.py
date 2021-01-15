@@ -18,7 +18,10 @@ def _hsl2rgb_helper(n: int, h: int, a: int, l: int, /) -> int:
 class Color:
     # To cache Color using WeakValueDictionary requires adding __weakref__ to slots
     # This increases size of each color object by 8 bytes
-    # The decision was made not to cache colors
+    # The decision was made not to cache colors through WeakValueDictionary
+    # It also not good to use common dict for caching
+    # There are 4,294,967,296 possible colors
+    # One dictionary unable to store them all
     __slots__ = '_argb',
 
     def __init__(self, /, red: int, green: int, blue: int, alpha: int = 255):
