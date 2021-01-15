@@ -16,12 +16,16 @@ def _hsl2rgb_helper(n: int, h: int, a: int, l: int, /) -> int:
 
 @final
 class Color:
+    # To cache Color using WeakValueDictionary requires adding __weakref__ to slots
+    # This increases size of each color object by 8 bytes
+    # The decision was made not to cache colors
     __slots__ = '_argb',
 
     def __init__(self, /, red: int, green: int, blue: int, alpha: int = 255):
         if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255 and 0 <= alpha <= 255):
             raise ValueError(f'values of color components must be integers in range [0, 255], '
                              f'got {alpha=}, {red=}, {green=}, {blue=}')
+
         self._argb = (alpha << 24) + (red << 16) + (green << 8) + blue
 
     @property
@@ -60,6 +64,9 @@ class Color:
 
     def __hash__(self, /):
         return self._argb
+
+    def __sizeof__(self, /):
+        return object.__sizeof__(self) + self._argb.__sizeof__()
 
     def apply(self, string: str, /) -> str:
         return f'|c{self}{string}|r'
@@ -105,7 +112,7 @@ class Color:
         return f'{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}'
 
     @classmethod
-    def from_hsv(cls, hue: int, saturation: int, value: int, alpha: int = 255):
+    def from_hsv(cls, /, hue: int, saturation: int, value: int, alpha: int = 255):
         # https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB_alternative
         a = saturation * value
         value *= 100
@@ -131,7 +138,7 @@ class Color:
         return round(h), round(s), round(v), self.alpha
 
     @classmethod
-    def from_hsl(cls, hue: int, saturation: int, lightness: int, alpha: int = 255):
+    def from_hsl(cls, /, hue: int, saturation: int, lightness: int, alpha: int = 255):
         # https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
         a = saturation * min(lightness, 100 - lightness)
         lightness *= 100
@@ -193,12 +200,6 @@ class Color:
 # print(f'{c!r}')
 # print(f'{c.hsv}')
 # print(f'{c.hsl}')
-
-# from sys import getsizeof as sizeof
-# c = Color(124, 25, 0, 10)
-# print(repr(c))
-# print(sizeof(c))
-# print(sizeof(c._argb))
 
 DecolorizePattern = re.compile(r'\|c[a-f0-9]{8}.*?\|r', re.DOTALL)
 ColorPattern = re.compile(r'\|c[a-f0-9]{8}')
