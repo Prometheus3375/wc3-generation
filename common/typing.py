@@ -21,6 +21,7 @@ Annotation = Union[
 ]
 
 _K = TypeVar('_K')
+_T = TypeVar('_T')
 _V_co = TypeVar('_V_co', covariant=True)
 
 
@@ -53,3 +54,7 @@ def eval_hint(hint: str, /, globals_: dict = None, locals_: dict = None):
 class SupportsKeysAndGetItem(Protocol[_K, _V_co]):
     def keys(self, /) -> Iterable[_K]: ...
     def __getitem__(self, item: _K, /) -> _V_co: ...
+
+
+class SupportsLessThan(Protocol[_T]):
+    def __lt__(self: _T, other: _T, /) -> bool: ...
