@@ -1,26 +1,28 @@
 from collections.abc import Iterator
 from typing import Union, final
 
-from gspread import Spreadsheet as Sh, Worksheet
+from gspread import Spreadsheet, Worksheet
 
 _K = Union[int, str]
 
 
 @final
 class SpreadsheetWrapper:
+    __slots__ = '_source', '_sheets_', '_not_fetched'
+
     __instances__: dict[str, 'SpreadsheetWrapper'] = {}
 
-    def __init__(self, sh: Sh, /):
-        if sh.id not in self.__instances__:
-            self._source = sh
-            self._sheets_: dict[_K, Worksheet] = {}
-            self._not_fetched = True
-            self.__instances__[sh.id] = self
-
-    def __new__(cls, sh: Sh, /):
+    def __new__(cls, sh: Spreadsheet, /):
         instance = cls.__instances__.get(sh.id, None)
-        if instance is None:
-            return super().__new__(cls)
+        if instance:
+            return instance
+
+        instance = object.__new__(cls)
+        instance._source = sh
+        # noinspection PyTypeHints
+        instance._sheets_: dict[_K, Worksheet] = {}
+        instance._not_fetched = True
+        cls.__instances__[sh.id] = instance
 
         return instance
 
@@ -32,6 +34,7 @@ class SpreadsheetWrapper:
         self._sheets_.clear()
         for i, sheet in enumerate(self._source.worksheets()):
             self._sheets_[i] = self._sheets_[sheet.title.lower()] = sheet
+        # noinspection PyAttributeOutsideInit
         self._not_fetched = False
 
     @classmethod
@@ -40,7 +43,7 @@ class SpreadsheetWrapper:
             wrapper.refetch()
 
     @property
-    def _sheets(self):
+    def _sheets(self, /):
         if self._not_fetched:
             self.refetch()
         return self._sheets_
