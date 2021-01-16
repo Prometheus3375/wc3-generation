@@ -1,15 +1,26 @@
 import re
+from typing import final
 
-DecolorizePattern = re.compile(r'\|c[a-f0-9]{8}.*?\|r', re.DOTALL)
-ColorPattern = re.compile(r'\|c[a-f0-9]{8}')
+from common.color import Color
 
 
-def _decolorize_repl(match: re.Match) -> str:
+@final
+class WC3Color(Color):
+    def apply(self, string: str, /) -> str:
+        return f'|c{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}{string}|r'
+
+    __call__ = apply
+
+
+_DecolorizePattern = re.compile(r'\|c[a-f0-9]{8}.*?\|r', re.DOTALL)
+
+
+def _decolorize_repl(match: re.Match, /) -> str:
     return match.group()[10:-2]
 
 
-def decolorize(string: str) -> str:
-    return DecolorizePattern.sub(_decolorize_repl, string)
+def decolorize(string: str, /) -> str:
+    return _DecolorizePattern.sub(_decolorize_repl, string)
 
 
 # print(decolorize(
