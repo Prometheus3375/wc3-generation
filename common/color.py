@@ -1,6 +1,4 @@
-from typing import final
-
-from common import sorted_ext
+from .functions import sorted_ext
 
 
 def _hsv2rgb_helper(n: int, h: int, a: int, v: int, /) -> int:
@@ -13,7 +11,6 @@ def _hsl2rgb_helper(n: int, h: int, a: int, l: int, /) -> int:
     return round((l - a * max(-1., min(k - 3., 9. - k, 1.))) * 255. / 100. / 100.)
 
 
-@final
 class Color:
     # To cache Color using WeakValueDictionary requires adding __weakref__ to slots
     # This increases size of each color object by 8 bytes
@@ -69,11 +66,6 @@ class Color:
 
     def __sizeof__(self, /):
         return object.__sizeof__(self) + self._argb.__sizeof__()
-
-    def apply(self, string: str, /) -> str:
-        return f'|c{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}{string}|r'
-
-    __call__ = apply
 
     @property
     def alpha_p(self, /):
