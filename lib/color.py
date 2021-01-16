@@ -27,13 +27,13 @@ class Color:
     def __init__(self, /, red: int, green: int, blue: int, alpha: int = 255):
         if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255 and 0 <= alpha <= 255):
             raise ValueError(f'values of color components must be integers in range [0, 255], '
-                             f'got {alpha=}, {red=}, {green=}, {blue=}')
+                             f'got {red=}, {green=}, {blue=}, {alpha=}')
 
-        self._argb = (alpha << 24) + (red << 16) + (green << 8) + blue
+        self._argb = (255 - alpha << 24) + (red << 16) + (green << 8) + blue
 
     @property
     def alpha(self, /):
-        return self._argb >> 24
+        return 255 - (self._argb >> 24)
 
     @property
     def red(self, /):
@@ -48,10 +48,10 @@ class Color:
         return self._argb & 255
 
     def __str__(self, /):
-        return f'{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}'
+        return f'#{self.red:02x}{self.green:02x}{self.blue:02x}{self.alpha:02x}'
 
     def __repr__(self, /):
-        return f'{self.__class__.__name__}(alpha={self.alpha}, red={self.red}, green={self.green}, blue={self.blue})'
+        return f'{self.__class__.__name__}(red={self.red}, green={self.green}, blue={self.blue}, alpha={self.alpha})'
 
     def __eq__(self, other, /):
         if isinstance(other, self.__class__):
@@ -72,7 +72,7 @@ class Color:
         return object.__sizeof__(self) + self._argb.__sizeof__()
 
     def apply(self, string: str, /) -> str:
-        return f'|c{self}{string}|r'
+        return f'|c{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}{string}|r'
 
     __call__ = apply
 
@@ -98,21 +98,20 @@ class Color:
     __getnewargs__ = to_tuple
 
     def to_dict(self, /):
-        return {'alpha': self.alpha, 'red': self.red, 'green': self.green, 'blue': self.blue}
+        return {'red': self.red, 'green': self.green, 'blue': self.blue, 'alpha': self.alpha}
 
     @classmethod
-    def from_hex(cls, hex_: str, alpha: int = 255, /):
+    def from_hex(cls, /, hex_: str, alpha: int = 255):
         if len(str) == 8:
-            alpha = int(hex_[:2], 16)
-            hex_ = hex_[2:]
+            alpha = int(hex_[6:], 16)
         elif len(str) != 6:
             raise ValueError(f'length of hex string must be 6 or 8, got {len(str)}')
 
-        return cls(int(hex_[:2], 16), int(hex_[2:4], 16), int(hex_[4:], 16), alpha)
+        return cls(int(hex_[:2], 16), int(hex_[2:4], 16), int(hex_[4:6], 16), alpha)
 
     @property
     def hex(self, /):
-        return f'{self.alpha:02x}{self.red:02x}{self.green:02x}{self.blue:02x}'
+        return f'{self.red:02x}{self.green:02x}{self.blue:02x}{self.alpha:02x}'
 
     @classmethod
     def from_hsv(cls, /, hue: int, saturation: int, value: int, alpha: int = 255):
