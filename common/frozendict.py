@@ -1,39 +1,41 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, Mapping, ValuesView
 from itertools import chain
+from sys import getsizeof as sizeof
 from typing import Generic, TypeVar, Union, overload
 
 from .typing import SupportsKeysAndGetItem
 
-_K = TypeVar('_K')
+_K_co = TypeVar('_K_co', covariant=True)
 _V_co = TypeVar('_V_co', covariant=True)
 _T = TypeVar('_T')
 _S = TypeVar('_S')
 
 
-# noinspection PyArgumentList
 @Mapping.register
-class frozendict(Generic[_K, _V_co]):
+class frozendict(Generic[_K_co, _V_co]):
     __slots__ = '_source', '_hash'
     _no_arg = object()
 
     @overload
     def __init__(self, /, **kwargs: _V_co): ...
     @overload
-    def __init__(self, map_: SupportsKeysAndGetItem[_K, _V_co], /, **kwargs: _V_co): ...
+    def __init__(self, mapping: SupportsKeysAndGetItem[_K_co, _V_co], /, **kwargs: _V_co): ...
     @overload
-    def __init__(self, iterable: Iterable[tuple[_K, _V_co]], /, **kwargs: _V_co): ...
+    def __init__(self, iterable: Iterable[tuple[_K_co, _V_co]], /, **kwargs: _V_co): ...
 
     def __init__(self, iterable=(), /, **kwargs):
         self._source = dict(iterable, **kwargs)
         self._hash = hash(frozenset(self._source.items()))
 
-    def __getitem__(self, item: _K, /) -> _V_co:
+    def __getitem__(self, item: _K_co, /) -> _V_co:
         return self._source[item]
 
     @overload
-    def get(self, key: _K, /) -> _V_co: ...
+    def get(self, key: _K_co, /) -> _V_co: ...
     @overload
-    def get(self, key: _K, default: Union[_V_co, _T], /) -> Union[_V_co, _T]: ...
+    def get(self, key: _K_co, default: _V_co, /) -> _V_co: ...
+    @overload
+    def get(self, key: _K_co, default: _T, /) -> Union[_V_co, _T]: ...
 
     def get(self, key, default=_no_arg, /):
         if default is self._no_arg:
@@ -50,18 +52,20 @@ class frozendict(Generic[_K, _V_co]):
 
     @classmethod
     def fromkeys(cls, iterable: Iterable, value=None, /):
-        return cls(tuple((k, value) for k in iterable))
+        # noinspection PyArgumentList
+        return cls((k, value) for k in iterable)
 
-    def keys(self, /) -> KeysView[_K]:
+    def keys(self, /) -> KeysView[_K_co]:
         return self._source.keys()
 
     def values(self, /) -> ValuesView[_V_co]:
         return self._source.values()
 
-    def items(self, /) -> ItemsView[_K, _V_co]:
+    def items(self, /) -> ItemsView[_K_co, _V_co]:
         return self._source.items()
 
     def copy(self, /):
+        # noinspection PyArgumentList
         return self.__class__(self._source)
 
     def __repr__(self, /):
@@ -76,17 +80,25 @@ class frozendict(Generic[_K, _V_co]):
     def __contains__(self, item, /):
         return item in self._source
 
-    def __iter__(self, /) -> Iterator[_K]:
+    def __iter__(self, /) -> Iterator[_K_co]:
         return iter(self._source)
 
-    def __reversed__(self, /) -> Iterator[_K]:
+    def __reversed__(self, /) -> Iterator[_K_co]:
         return reversed(self._source)
 
-    def __or__(self, other: Mapping[_K, _V_co], /) -> 'frozendict[_K, _V_co]':
-        return self.__class__(chain(self._source.items(), other.items()))
+    def __or__(self, other: Mapping[_K_co, _V_co], /) -> 'frozendict[_K_co, _V_co]':
+        if isinstance(other, Mapping):
+            # noinspection PyArgumentList
+            return self.__class__(chain(self._source.items(), other.items()))
 
-    def __ror__(self, other: Mapping[_K, _V_co], /) -> 'frozendict[_K, _V_co]':
-        return self.__class__(chain(other.items(), self._source.items()))
+        return NotImplemented
+
+    def __ror__(self, other: Mapping[_K_co, _V_co], /) -> 'frozendict[_K_co, _V_co]':
+        if isinstance(other, Mapping):
+            # noinspection PyArgumentList
+            return self.__class__(chain(other.items(), self._source.items()))
+
+        return NotImplemented
 
     def __eq__(self, other, /):
         return self._source == other
@@ -99,6 +111,9 @@ class frozendict(Generic[_K, _V_co]):
 
     def __getnewargs__(self, /):
         return tuple(self.items())
+
+    def __sizeof__(self):
+        return object.__sizeof__(self) + sizeof(self._source) + sizeof(self._hash)
 
 
 __all__ = [frozendict.__name__]
