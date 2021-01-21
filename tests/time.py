@@ -1,6 +1,5 @@
 import timeit
 from enum import Enum, unique
-from math import sqrt
 from time import perf_counter_ns
 from typing import Any
 
@@ -46,15 +45,21 @@ def repeat(stmt: str, setup: str = 'pass', repeat_: int = 100, number: int = 1_0
         number=number,
         globals=globals_
     )
-    values = [v / number for v in values]
-    mean = sum(values) / len(values)
-    std = 3 * sqrt(sum((v - mean) * (v - mean) for v in values) / len(values))
+    value = min(values) / number
     if not measure:
-        measure = Measure.get(min(mean, std))
-    mean = Measure.convert(mean, measure)
-    std = Measure.convert(std, measure)
+        measure = Measure.get(value)
+    value = Measure.convert(value, measure)
+    return f'{value: >6.1f} {measure} per loop ({repeat_:,} runs, {number:,} loops each)'
 
-    return (
-        f'{mean: >6.1f} ± {std: >6.1f} {measure} per loop '
-        f'({repeat_:,} runs, {number:,} loops each)'
-    )
+    # values = [v / number for v in values]
+    # mean = sum(values) / len(values)
+    # std = 3 * sqrt(sum((v - mean) * (v - mean) for v in values) / len(values))
+    # if not measure:
+    #     measure = Measure.get(min(mean, std))
+    # mean = Measure.convert(mean, measure)
+    # std = Measure.convert(std, measure)
+    #
+    # return (
+    #     f'{mean: >6.1f} ± {std: >6.1f} {measure} per loop '
+    #     f'({repeat_:,} runs, {number:,} loops each)'
+    # )
