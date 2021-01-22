@@ -1,7 +1,7 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, Mapping, ValuesView
 from itertools import chain
-from sys import getsizeof as sizeof
-from typing import Generic, TypeVar, Union, overload
+from sys import getsizeof
+from typing import Generic, Optional, TypeVar, Union, overload
 
 from .typing import SupportsKeysAndGetItem
 
@@ -14,7 +14,6 @@ _S = TypeVar('_S')
 @Mapping.register
 class frozendict(Generic[_K_co, _V_co]):
     __slots__ = '_source', '_hash'
-    _no_arg = object()
 
     @overload
     def __init__(self, /, **kwargs: _V_co): ...
@@ -31,16 +30,13 @@ class frozendict(Generic[_K_co, _V_co]):
         return self._source[item]
 
     @overload
-    def get(self, key: _K_co, /) -> _V_co: ...
+    def get(self, key: _K_co, /) -> Optional[_V_co]: ...
     @overload
     def get(self, key: _K_co, default: _V_co, /) -> _V_co: ...
     @overload
     def get(self, key: _K_co, default: _T, /) -> Union[_V_co, _T]: ...
 
-    def get(self, key, default=_no_arg, /):
-        if default is self._no_arg:
-            return self._source.get(key)
-
+    def get(self, key, default=None, /):
         return self._source.get(key, default)
 
     @classmethod
@@ -113,7 +109,7 @@ class frozendict(Generic[_K_co, _V_co]):
         return tuple(self.items())
 
     def __sizeof__(self):
-        return object.__sizeof__(self) + sizeof(self._source) + sizeof(self._hash)
+        return object.__sizeof__(self) + getsizeof(self._source) + getsizeof(self._hash)
 
 
 __all__ = [frozendict.__name__]
