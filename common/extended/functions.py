@@ -25,16 +25,10 @@ def build_arguments(iterable, key):
 
 @overload
 def max(value1: SLT, value2: SLT, /, *values: SLT) -> tuple[SLT, int]: ...
-
-
 @overload
 def max(value1: T, value2: T, /, *values: T, key: key_func) -> tuple[T, int]: ...
-
-
 @overload
 def max(iterable: Iterable[SLT], /) -> tuple[SLT, int]: ...
-
-
 @overload
 def max(iterable: Iterable[T], /, *, key: key_func) -> tuple[T, int]: ...
 
@@ -50,21 +44,16 @@ def max(*values, key=None):
         values = values[0]
 
     iterable, key = build_arguments(values, key)
-    return _max(iterable, key=key)
+    index, value = _max(iterable, key=key)
+    return value, index
 
 
 @overload
 def min(value1: SLT, value2: SLT, /, *values: SLT) -> tuple[SLT, int]: ...
-
-
 @overload
 def min(value1: T, values2: T, /, *values: T, key: key_func) -> tuple[T, int]: ...
-
-
 @overload
 def min(iterable: Iterable[SLT], /) -> tuple[SLT, int]: ...
-
-
 @overload
 def min(iterable: Iterable[T], /, *, key: key_func) -> tuple[T, int]: ...
 
@@ -80,13 +69,12 @@ def min(*values, key=None):
         values = values[0]
 
     iterable, key = build_arguments(values, key)
-    return _min(iterable, key=key)
+    index, value = _min(iterable, key=key)
+    return value, index
 
 
 @overload
 def sorted(iterable: Iterable[SLT], /, *, reverse: bool = False) -> tuple[list[SLT], list[int]]: ...
-
-
 @overload
 def sorted(iterable: Iterable[T], /, *, key: key_func, reverse: bool = False) -> tuple[list[T], list[int]]: ...
 
@@ -103,7 +91,8 @@ def sorted(iterable, /, *, key=None, reverse=False):
     """
     iterable, key = build_arguments(iterable, key)
     sort = _sorted(iterable, key=key, reverse=reverse)
-    return tuple(list(it) for it in zip(*sort))
+    indexes, values = tuple(list(it) for it in zip(*sort))
+    return values, indexes
 
 
 __all__ = [*reg(__name__)]
