@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Iterator, Set
 from typing import ClassVar, Generic, TypeVar, Union, overload
 
+# TODO: rename to mutable and clean everything
 _T1 = TypeVar('_T1')
 _T2 = TypeVar('_T2')
 _K = Union[_T1, _T2]
