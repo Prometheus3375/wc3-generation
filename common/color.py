@@ -1,4 +1,4 @@
-from .functions import sorted_ext
+from . import extended
 
 
 def _hsv2rgb_helper(n: int, h: int, a: int, v: int, /) -> int:
@@ -121,7 +121,7 @@ class Color:
     def hsv(self, /):
         # https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
         comp = self.red_p, self.green_p, self.blue_p
-        sort, idx = sorted_ext(comp)
+        sort, idx = extended.sorted(comp)
         min_, _, max_ = sort
         max_idx = idx[2]
         v = max_
@@ -147,7 +147,7 @@ class Color:
     def hsl(self, /):
         # https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
         comp = self.red_p, self.green_p, self.blue_p
-        sort, idx = sorted_ext(comp)
+        sort, idx = extended.sorted(comp)
         min_, _, max_ = sort
         max_idx = idx[2]
         l = (max_ + min_) / 2.
