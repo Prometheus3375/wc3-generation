@@ -75,11 +75,11 @@ class wtsString:
             return None
 
         colon = comment.index(':')
-        typ = CommentType(comment[3:colon])
+        typ = wtsCommentType(comment[3:colon])
         rawcode = comment[colon + 2:colon + 6]
         closing_brace = comment.rindex(')', colon + 8, len(comment) - 2)
         opening_brace = comment.index('(', closing_brace + 3)
-        field = CommentField(comment[closing_brace + 3:opening_brace - 1])
+        field = wtsCommentField(comment[closing_brace + 3:opening_brace - 1])
         return typ, rawcode, field
 
     @property

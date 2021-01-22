@@ -24,7 +24,7 @@ class _CommentMap:
         return False
 
     def __getitem__(self, item: _CommentData, /) -> Optional[list[wtsString]]:
-        return self._map.get(item, None)
+        return self._map.get(item)
 
     def __len__(self, /) -> int:
         return len(self._map)

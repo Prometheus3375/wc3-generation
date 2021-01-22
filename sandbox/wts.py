@@ -3,10 +3,10 @@ from lib.wts import wtsFile
 
 
 def extract_types_and_fields(path: str):
-    file = wtsFile(path).read()
+    file = wtsFile(path)
     types = set()
     fields = set()
-    for s in file:
+    for s in file.storage:
         try:
             comment = s.comment.strip()
             if comment:
