@@ -60,6 +60,7 @@ _SLT = SupportsLessThan[_T]
 _key_func = Callable[[_T], SupportsLessThan]
 
 
+# TODO: create module extensions and move there extended max, min, sorted
 @reg
 def identity(o):
     """
@@ -89,7 +90,6 @@ def max_ext(iterable: Iterable[_T], /, *, key: _key_func) -> tuple[_T, int]: ...
 
 @reg
 def max_ext(*args, key=None):
-    max
     if len(args) == 1:
         args = args[0]
         if not isinstance(args, Iterable):
