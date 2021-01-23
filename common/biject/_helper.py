@@ -40,21 +40,25 @@ class PairsView(Generic[T1, T2], Set[Tup]):
     def __contains__(self, pair: Tup, /):
         return pair[0] == self._source.get(pair[1], object())
 
-    @staticmethod
-    def _pairs_from_items(items: Iterable[Tup], /):
+    def __iter__(self, /) -> Iterator[Tup]:
         seen = set()
-        for pair in items:
-            if (pair[1], pair[0]) in seen:
+        for v1, v2 in self._source.items():
+            if (v2, v1) in seen:
                 continue
 
+            pair = v1, v2
             seen.add(pair)
             yield pair
 
-    def __iter__(self, /) -> Iterator[Tup]:
-        return self._pairs_from_items(self._source.items())
-
     def __reversed__(self, /) -> Iterator[Tup]:
-        return self._pairs_from_items(reversed(self._source.items()))
+        seen = set()
+        for v2, v1 in reversed(self._source.items()):
+            pair = v1, v2
+            if pair in seen:
+                continue
+
+            seen.add((v2, v1))
+            yield pair
 
     def __repr__(self, /):
         return f'{self.__class__.__name__}({self._source!r})'
