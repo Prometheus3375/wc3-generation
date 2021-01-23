@@ -19,8 +19,8 @@ def unique_pairs(iterable: Iterable[Tup], mapping: dict = None, /) -> dict[KV, K
     d = {} if mapping is None else mapping
     default = object()
     for value1, value2 in iterable:
-        d.pop(d.pop(value1, default))
-        d.pop(d.pop(value2, default))
+        d.pop(d.pop(value1, default), default)
+        d.pop(d.pop(value2, default), default)
         d[value1] = value2
         d[value2] = value1
 
