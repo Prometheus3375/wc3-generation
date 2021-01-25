@@ -41,23 +41,13 @@ class PairsView(Generic[T1, T2], Set[Tup]):
         return pair[0] == self._source.get(pair[1], object())
 
     def __iter__(self, /) -> Iterator[Tup]:
-        seen = set()
-        for v1, v2 in self._source.items():
-            if (v2, v1) in seen:
-                continue
-
-            pair = v1, v2
-            seen.add(pair)
+        items = iter(self._source.items())
+        for pair, _ in zip(items, items):
             yield pair
 
     def __reversed__(self, /) -> Iterator[Tup]:
-        seen = set()
-        for v2, v1 in reversed(self._source.items()):
-            pair = v1, v2
-            if pair in seen:
-                continue
-
-            seen.add((v2, v1))
+        items = reversed(self._source.items())
+        for _, pair in zip(items, items):
             yield pair
 
     def __repr__(self, /):
