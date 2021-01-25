@@ -47,11 +47,12 @@ def reg(o: object):
 
 
 def compute_all(file: str):
-    module = runpy.run_module(file)
+    mod, _ = os.path.splitext(file.replace('/', '.').replace('\\', '.'))
+    module = runpy.run_module(mod)
     if all_ := module.get('__all__'):
         with open(file, 'a') as f:
-            all_ = ''.join(f'    {name},\n' for name in sorted(all_))
-            f.write(f'# noinspection PyRedeclaration\n__all__ = ({all_})\n')
+            all_ = ''.join(f'    {name!r},\n' for name in sorted(all_))
+            f.write(f'# noinspection PyRedeclaration\n__all__ = (\n{all_})\n')
 
 
 def compute_all_dir(directory: str,
