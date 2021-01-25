@@ -5,59 +5,59 @@ from typing import Generic, Optional, TypeVar, Union, overload
 
 from .typing import SupportsKeysAndGetItem
 
-_K_co = TypeVar('_K_co', covariant=True)
-_V_co = TypeVar('_V_co', covariant=True)
-_T = TypeVar('_T')
-_S = TypeVar('_S')
+K_co = TypeVar('K_co', covariant=True)
+V_co = TypeVar('V_co', covariant=True)
+T = TypeVar('T')
+S = TypeVar('S')
 
 
 @Mapping.register
-class frozendict(Generic[_K_co, _V_co]):
+class frozendict(Generic[K_co, V_co]):
     __slots__ = '_source', '_hash'
 
     @overload
-    def __init__(self, /, **kwargs: _V_co): ...
+    def __init__(self, /, **kwargs: V_co): ...
     @overload
-    def __init__(self, mapping: SupportsKeysAndGetItem[_K_co, _V_co], /, **kwargs: _V_co): ...
+    def __init__(self, mapping: SupportsKeysAndGetItem[K_co, V_co], /, **kwargs: V_co): ...
     @overload
-    def __init__(self, iterable: Iterable[tuple[_K_co, _V_co]], /, **kwargs: _V_co): ...
+    def __init__(self, iterable: Iterable[tuple[K_co, V_co]], /, **kwargs: V_co): ...
 
     def __init__(self, iterable=(), /, **kwargs):
         self._source = dict(iterable, **kwargs)
         self._hash = hash(frozenset(self._source.items()))
 
-    def __getitem__(self, item: _K_co, /) -> _V_co:
+    def __getitem__(self, item: K_co, /) -> V_co:
         return self._source[item]
 
     @overload
-    def get(self, key: _K_co, /) -> Optional[_V_co]: ...
+    def get(self, key: K_co, /) -> Optional[V_co]: ...
     @overload
-    def get(self, key: _K_co, default: _V_co, /) -> _V_co: ...
+    def get(self, key: K_co, default: V_co, /) -> V_co: ...
     @overload
-    def get(self, key: _K_co, default: _T, /) -> Union[_V_co, _T]: ...
+    def get(self, key: K_co, default: T, /) -> Union[V_co, T]: ...
 
     def get(self, key, default=None, /):
         return self._source.get(key, default)
 
     @classmethod
     @overload
-    def fromkeys(cls, iterable: Iterable[_T], /) -> 'frozendict[_T, None]': ...
+    def fromkeys(cls, iterable: Iterable[T], /) -> 'frozendict[T, None]': ...
     @classmethod
     @overload
-    def fromkeys(cls, iterable: Iterable[_T], value: _S, /) -> 'frozendict[_T, _S]': ...
+    def fromkeys(cls, iterable: Iterable[T], value: S, /) -> 'frozendict[T, S]': ...
 
     @classmethod
     def fromkeys(cls, iterable: Iterable, value=None, /):
         # noinspection PyArgumentList
         return cls((k, value) for k in iterable)
 
-    def keys(self, /) -> KeysView[_K_co]:
+    def keys(self, /) -> KeysView[K_co]:
         return self._source.keys()
 
-    def values(self, /) -> ValuesView[_V_co]:
+    def values(self, /) -> ValuesView[V_co]:
         return self._source.values()
 
-    def items(self, /) -> ItemsView[_K_co, _V_co]:
+    def items(self, /) -> ItemsView[K_co, V_co]:
         return self._source.items()
 
     def copy(self, /):
@@ -76,20 +76,20 @@ class frozendict(Generic[_K_co, _V_co]):
     def __contains__(self, item, /):
         return item in self._source
 
-    def __iter__(self, /) -> Iterator[_K_co]:
+    def __iter__(self, /) -> Iterator[K_co]:
         return iter(self._source)
 
-    def __reversed__(self, /) -> Iterator[_K_co]:
+    def __reversed__(self, /) -> Iterator[K_co]:
         return reversed(self._source)
 
-    def __or__(self, other: Mapping[_K_co, _V_co], /) -> 'frozendict[_K_co, _V_co]':
+    def __or__(self, other: Mapping[K_co, V_co], /) -> 'frozendict[K_co, V_co]':
         if isinstance(other, Mapping):
             # noinspection PyArgumentList
             return self.__class__(chain(self._source.items(), other.items()))
 
         return NotImplemented
 
-    def __ror__(self, other: Mapping[_K_co, _V_co], /) -> 'frozendict[_K_co, _V_co]':
+    def __ror__(self, other: Mapping[K_co, V_co], /) -> 'frozendict[K_co, V_co]':
         if isinstance(other, Mapping):
             # noinspection PyArgumentList
             return self.__class__(chain(other.items(), self._source.items()))
