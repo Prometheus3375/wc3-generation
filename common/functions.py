@@ -2,7 +2,7 @@ from collections.abc import Callable, Collection, Iterable
 from traceback import format_tb
 from typing import Any, Union
 
-from .reg import reg
+from all_util import reg
 
 _IterableStr = Union[Iterable[str], str]
 

@@ -1,5 +1,6 @@
 import os
 import runpy
+import sys
 from collections.abc import Container, Iterator, MutableSet
 from typing import overload
 
@@ -8,23 +9,23 @@ class All(MutableSet[str]):
     __slots__ = '_set',
     module2all: dict[str, 'All'] = {}
 
-    def __init__(self, module: str):
+    def __init__(self, module: str, /):
         self._set = set()
         self.module2all[module] = self
 
-    def add(self, name: str):
+    def add(self, name: str, /):
         self._set.add(name)
 
-    def discard(self, name: str):
+    def discard(self, name: str, /):
         self._set.discard(name)
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         return len(self._set)
 
-    def __contains__(self, name: str) -> bool:
+    def __contains__(self, name: str, /) -> bool:
         return name in self._set
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self, /) -> Iterator[str]:
         return iter(self._set)
 
 
@@ -46,10 +47,20 @@ def reg(o: object):
     return o
 
 
+def path2module(path: str) -> str:
+    return os.path.splitext(path.replace('/', '.').replace('\\', '.'))[0]
+
+
 def compute_all(file: str):
-    mod, _ = os.path.splitext(file.replace('/', '.').replace('\\', '.'))
-    module = runpy.run_module(mod)
-    if all_ := module.get('__all__'):
+    module_path = path2module(file)
+    module = sys.modules.get(module_path)
+    if module is None:
+        module = runpy.run_module(module_path)
+        all_ = module.get('__all__')
+    else:
+        all_ = getattr(module, '__all__', ())
+
+    if all_:
         with open(file, 'a') as f:
             all_ = ''.join(f'    {name!r},\n' for name in sorted(all_))
             f.write(f'# noinspection PyRedeclaration\n__all__ = (\n{all_})\n')
