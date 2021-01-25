@@ -176,7 +176,8 @@ class Sheet(Generic[_Row_co], metaclass=_fool_pycharm(_SheetMeta)):
                 try:
                     value = convert(value)
                 except Exception as e:
-                    raise SheetParsingError(f'{e.__class__.__name__} at cell {cls.cell(i, j)}: {e}')
+                    # https://stackoverflow.com/a/24752607/14369408
+                    raise SheetParsingError(f'{e.__class__.__name__} at cell {cls.cell(i, j)}: {e}') from e
 
                 args[name] = value
 
