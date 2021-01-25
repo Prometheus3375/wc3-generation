@@ -56,6 +56,8 @@ def path2module(path: str) -> str:
 # Add the ability to remove all_util import and @reg
 # Add the ability to specify __all__ container type
 # Add rewriting __all__ if it is on the last line
+# Make reg fake, i. e. it does nothing, generation is done while compiling
+# Also add support for reg annotations to add constants to __all__
 # Investigate how to automatically run this when pushing to main on GitLab/GitHub
 
 def compute_all(file: str):
@@ -63,9 +65,9 @@ def compute_all(file: str):
     module = sys.modules.get(module_path)
     if module is None:
         module = runpy.run_module(module_path)
-        all_ = module.get('__all__')
+        all_ = module.get('__all__', None)
     else:
-        all_ = getattr(module, '__all__', ())
+        all_ = getattr(module, '__all__', None)
 
     if all_:
         with open(file, 'a') as f:
@@ -91,6 +93,11 @@ def compute_all_dir(directory: str,
         allowed = lambda x: True
 
     for root, dirs, files in os.walk(directory):
+        # Run init module
+        init = f'{root}{os.path.sep}__init__.py'
+        if os.path.isfile(init):
+            runpy.run_module(path2module(init))
+
         for f in files:
             path = f'{root}{os.path.sep}{f}'
             name, ext = os.path.splitext(f)
