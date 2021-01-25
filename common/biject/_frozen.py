@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from sys import getsizeof
 
-from ._helper import AbstractBijectiveMap, T1_co, T2_co, Tup_co
+from ._abstract import AbstractBijectiveMap, T1_co, T2_co, Tup_co
 
 
 class FrozenBijectiveMap(AbstractBijectiveMap[T1_co, T2_co]):

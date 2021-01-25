@@ -1,1 +1,1 @@
-from .frozen import FrozenBijectiveMap
+from ._frozen import FrozenBijectiveMap
