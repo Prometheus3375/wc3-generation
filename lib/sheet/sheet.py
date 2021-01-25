@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Sequence
-from typing import Any, ClassVar, Generic, Optional, TypeVar, final, overload
+from typing import Any, Generic, Optional, TypeVar, final, overload
 from weakref import WeakKeyDictionary
 
 from gspread import Spreadsheet, Worksheet
@@ -13,10 +13,9 @@ from .wrapper import SpreadsheetWrapper
 
 class _SheetMeta(EmptySlotsByDefaults):
     __instances__ = WeakKeyDictionary()
-
     spreadsheet: Spreadsheet
-    index: int
-    title: str
+    index: Optional[int]
+    title: Optional[str]
     transpose: bool
     row_class: type[Row]
 
@@ -56,6 +55,7 @@ class SheetParsingError(Exception):
 def _fool_pycharm(o):
     """
     Return the passed object unchanged.
+
     Used to force PyCharm not to perceive _SheetMeta as metaclass of Sheet.
     This allows PyCharm to assign correct types to Sheet subclasses.
     More about it in this issue: https://youtrack.jetbrains.com/issue/PY-46345
@@ -69,12 +69,13 @@ def _fool_pycharm(o):
 _Row_co = TypeVar('_Row_co', covariant=True)
 
 
+# TODO add special attribute ignored_columns
 class Sheet(Generic[_Row_co], metaclass=_fool_pycharm(_SheetMeta)):
-    spreadsheet: ClassVar[Spreadsheet]
-    index: ClassVar[int]
-    title: ClassVar[str]
-    transpose: ClassVar[bool]
-    row_class: ClassVar[type[Row]]
+    spreadsheet: Spreadsheet
+    index: Optional[int]
+    title: Optional[str]
+    transpose: bool
+    row_class: type[Row]
 
     __slots__ = '_rows',
 
