@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable
 from typing import TypeVar, overload
 
-from ..reg import reg
+from all_util import reg
 from ..typing import SupportsLessThan
 
 T = TypeVar('T')
