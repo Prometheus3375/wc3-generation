@@ -10,7 +10,6 @@ from common.typing import Annotation, eval_hint
 from .conversions import ConversionFunc
 
 # TODO suggest to take type from .pyi stub file rather than in source
-# TODO add special attribute ignored_columns_
 
 _row_attributes = frozenset((
     # in-source methods
