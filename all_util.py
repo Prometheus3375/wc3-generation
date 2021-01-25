@@ -2,7 +2,7 @@ import os
 import runpy
 import sys
 from collections.abc import Container, Iterator, MutableSet
-from typing import overload
+from typing import Any, overload
 
 
 class All(MutableSet[str]):
@@ -51,6 +51,15 @@ def path2module(path: str) -> str:
     return os.path.splitext(path.replace('/', '.').replace('\\', '.'))[0]
 
 
+def get_module(path: str) -> dict[str, Any]:
+    path = path2module(path)
+    existing = sys.modules.get(path)
+    if existing is None:
+        return runpy.run_module(path)
+
+    return existing.__dict__
+
+
 # TODO
 # It should be a separate package
 # Add the ability to remove all_util import and @reg
@@ -61,15 +70,8 @@ def path2module(path: str) -> str:
 # Investigate how to automatically run this when pushing to main on GitLab/GitHub
 
 def compute_all(file: str):
-    module_path = path2module(file)
-    module = sys.modules.get(module_path)
-    if module is None:
-        module = runpy.run_module(module_path)
-        all_ = module.get('__all__', None)
-    else:
-        all_ = getattr(module, '__all__', None)
-
-    if all_:
+    module = get_module(file)
+    if all_ := module.get('__all__'):
         with open(file, 'a') as f:
             all_ = ''.join(f'    {name!r},\n' for name in sorted(all_))
             f.write(f'# noinspection PyRedeclaration\n__all__ = (\n{all_})\n')
@@ -96,7 +98,7 @@ def compute_all_dir(directory: str,
         # Run init module
         init = f'{root}{os.path.sep}__init__.py'
         if os.path.isfile(init):
-            runpy.run_module(path2module(init))
+            get_module(init)
 
         for f in files:
             path = f'{root}{os.path.sep}{f}'
