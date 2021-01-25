@@ -51,6 +51,13 @@ def path2module(path: str) -> str:
     return os.path.splitext(path.replace('/', '.').replace('\\', '.'))[0]
 
 
+# TODO
+# It should be a separate package
+# Add the ability to remove all_util import and @reg
+# Add the ability to specify __all__ container type
+# Add rewriting __all__ if it is on the last line
+# Investigate how to automatically run this when pushing to main on GitLab/GitHub
+
 def compute_all(file: str):
     module_path = path2module(file)
     module = sys.modules.get(module_path)
