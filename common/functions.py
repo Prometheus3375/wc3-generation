@@ -53,4 +53,4 @@ def repr_collection(c: Collection, singular: _IterableStr, plural: _IterableStr,
     return singular if len(c) == 1 else plural, delimiter.join(func(o) for o in c)
 
 
-__all__ = [*reg(__name__)]
+__all__ = *reg(__name__),

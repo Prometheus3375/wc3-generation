@@ -2,9 +2,11 @@ from collections.abc import Iterator, MutableSet
 from typing import overload
 
 
-class _All(MutableSet[str]):
+# TODO: add a function that will process all __all__ and rewrite it
+
+class All(MutableSet[str]):
     __slots__ = '_set',
-    module2all: dict[str, '_All'] = {}
+    module2all: dict[str, 'All'] = {}
 
     def __init__(self, module: str):
         self._set = set()
@@ -36,14 +38,14 @@ def reg(module: str) -> Iterator[str]: ...
 
 def reg(o: object):
     if isinstance(o, str):
-        return iter(_All.module2all.pop(o))
+        return iter(All.module2all.pop(o))
 
     module = o.__module__
-    instance = _All.module2all.get(module, None)
+    instance = All.module2all.get(module, None)
     if instance is None:
-        instance = _All(module)
+        instance = All(module)
     instance.add(o.__name__)
     return o
 
 
-__all__ = [reg.__name__]
+__all__ = 'reg',

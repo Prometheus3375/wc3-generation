@@ -95,4 +95,4 @@ def sorted(iterable, /, *, key=None, reverse=False):
     return values, indexes
 
 
-__all__ = [*reg(__name__)]
+__all__ = *reg(__name__),
