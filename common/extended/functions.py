@@ -1,7 +1,6 @@
 from collections.abc import Callable, Iterable
 from typing import TypeVar, overload
 
-from all_util import reg
 from ..typing import SupportsLessThan
 
 T = TypeVar('T')
@@ -33,7 +32,6 @@ def max(iterable: Iterable[SLT], /) -> tuple[SLT, int]: ...
 def max(iterable: Iterable[T], /, *, key: key_func) -> tuple[T, int]: ...
 
 
-@reg
 def max(*values, key=None):
     """
     With a single iterable argument, return its biggest item and the position of this item.
@@ -58,7 +56,6 @@ def min(iterable: Iterable[SLT], /) -> tuple[SLT, int]: ...
 def min(iterable: Iterable[T], /, *, key: key_func) -> tuple[T, int]: ...
 
 
-@reg
 def min(*values, key=None):
     """
     With a single iterable argument, return its smallest item and the position of this item.
@@ -79,7 +76,6 @@ def sorted(iterable: Iterable[SLT], /, *, reverse: bool = False) -> tuple[list[S
 def sorted(iterable: Iterable[T], /, *, key: key_func, reverse: bool = False) -> tuple[list[T], list[int]]: ...
 
 
-@reg
 def sorted(iterable, /, *, key=None, reverse=False):
     """
     Return a tuple of 2 lists.
@@ -95,4 +91,4 @@ def sorted(iterable, /, *, key=None, reverse=False):
     return values, indexes
 
 
-__all__ = *reg(__name__),
+__all__ = 'max', 'min', 'sorted'
