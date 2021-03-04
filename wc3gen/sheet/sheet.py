@@ -4,8 +4,8 @@ from weakref import WeakKeyDictionary
 
 from gspread import Spreadsheet, Worksheet
 
-from uncommon import repr_collection
-from uncommon.metaclasses import EmptySlotsByDefaults
+from misclib import repr_collection
+from misclib.metaclasses import EmptySlotsByDefaults
 from .functions import _index2column
 from .row import Row
 from .wrapper import SpreadsheetWrapper
