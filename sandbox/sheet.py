@@ -1,6 +1,6 @@
 import gspread
 
-from lib.sheet import Row, Sheet
+from wc3gen.sheet import Row, Sheet
 
 gc = gspread.service_account(filename='sandbox/wisptd-reader.json')
 spreadsheet = gc.open_by_url('https://docs.google.com/spreadsheets/d/1LfpGAp6Z0qlFUxjVStFu5Z_0_Dj_U5Wck339fdPyUKk')

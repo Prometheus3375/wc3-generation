@@ -1,5 +1,6 @@
 from common import exc2str
-from lib.wts import wtsFile
+
+from wc3gen.wts import wtsFile
 
 
 def extract_types_and_fields(path: str):
