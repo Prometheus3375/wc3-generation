@@ -1,3 +1,4 @@
 - [PEP 585 - Type Hinting Generics](https://www.python.org/dev/peps/pep-0585/)
 - [Move directory from one repository to another, preserving git history](https://medium.com/@ayushya/move-directory-from-one-repository-to-another-preserving-git-history-d210fa049d4b)
 - [How to create a Python library](https://medium.com/analytics-vidhya/how-to-create-a-python-library-7d5aea80cc3f)
+- [MIT vs. 2-clause BSD](https://opensource.stackexchange.com/questions/217/what-are-the-essential-differences-between-the-bsd-and-mit-licences)
