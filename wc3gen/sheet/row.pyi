@@ -1,6 +1,6 @@
 from typing import Any, Final, TypeVar
 
-from common import frozendict
+from uncommon import frozendict
 from .conversions import ConversionFunc
 
 _T = TypeVar('_T')

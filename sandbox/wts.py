@@ -1,4 +1,4 @@
-from common import exc2str
+from uncommon import exc2str
 
 from wc3gen.wts import wtsFile
 

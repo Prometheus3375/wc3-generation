@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, final
 
-from common import truncate_string
+from uncommon import truncate_string
 
 
 @final

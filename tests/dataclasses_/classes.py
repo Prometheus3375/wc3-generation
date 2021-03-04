@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, NamedTuple
 
-from common import except_
+from uncommon import except_
 
 
 @dataclass
