@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from lib.sheet import Row
+from wc3gen.sheet import Row
 
 
 def must_be_positive(*args):

@@ -1,4 +1,4 @@
-from lib.sheet.functions import column2index, index2column
+from wc3gen.sheet.functions import column2index, index2column
 
 
 def check_conversions(index: int, column: str):
