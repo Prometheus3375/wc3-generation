@@ -1,7 +1,7 @@
 import re
 from typing import final
 
-from common.color import Color
+from uncommon.color import Color
 
 
 @final

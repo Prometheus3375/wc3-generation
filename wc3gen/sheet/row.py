@@ -5,8 +5,8 @@ from sys import intern, modules
 from typing import Any, Union
 from weakref import WeakSet
 
-from common import frozendict, repr_collection
-from common.typing import Annotation, eval_hint
+from uncommon import frozendict, repr_collection
+from uncommon.typing import Annotation, eval_hint
 from .conversions import ConversionFunc
 
 # TODO suggest to take type from .pyi stub file rather than in source

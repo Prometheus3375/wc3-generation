@@ -1,7 +1,7 @@
 from types import GenericAlias
 from typing import NamedTuple
 
-from common import except_
+from uncommon import except_
 
 
 class LIST:

@@ -1,4 +1,4 @@
-from common.metaclasses import EmptySlotsByDefaults
+from uncommon.metaclasses import EmptySlotsByDefaults
 
 
 class Meta1(type):

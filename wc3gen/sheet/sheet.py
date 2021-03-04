@@ -2,10 +2,10 @@ from collections.abc import Iterator, Sequence
 from typing import Any, Generic, Optional, TypeVar, final, overload
 from weakref import WeakKeyDictionary
 
-from common import repr_collection
-from common.metaclasses import EmptySlotsByDefaults
 from gspread import Spreadsheet, Worksheet
 
+from uncommon import repr_collection
+from uncommon.metaclasses import EmptySlotsByDefaults
 from .functions import _index2column
 from .row import Row
 from .wrapper import SpreadsheetWrapper
