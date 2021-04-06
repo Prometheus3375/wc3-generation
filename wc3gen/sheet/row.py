@@ -6,8 +6,8 @@ from typing import Any, Union
 from weakref import WeakSet
 
 from misclib import frozendict, repr_collection
-from misclib.typing import Annotation, eval_hint
 from .conversions import ConversionFunc
+from .._typing import Annotation, eval_hint
 
 # TODO suggest to take type from .pyi stub file rather than in source
 
