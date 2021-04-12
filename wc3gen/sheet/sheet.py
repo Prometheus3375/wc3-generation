@@ -24,8 +24,10 @@ class _SheetMeta(EmptySlotsByDefaults):
             raise TypeError(f'class {cls.__name__} cannot be instantiated')
 
         instances = cls.__class__.__instances__
-        if refetch or cls not in instances:
+        if cls not in instances:
             instances[cls] = super().__call__(refetch=refetch)
+        elif refetch:
+            instances[cls].__init__(refetch=refetch)
 
         return instances[cls]
 
