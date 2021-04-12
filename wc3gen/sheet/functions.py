@@ -29,7 +29,7 @@ def column2index(column: str, /) -> int:
         raise ValueError(f'column must consist of upper latin letters, got empty string')
 
     for c in column:
-        if not c.isupper():
+        if not (65 <= ord(c) <= 90):
             raise ValueError(f'column must consist of upper latin letters, got {column}')
 
     result = 0
