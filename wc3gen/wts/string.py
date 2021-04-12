@@ -51,12 +51,19 @@ class wtsCommentField(Enum):
 _CommentData = tuple[wtsCommentType, str, wtsCommentField]
 
 
+class wtsStringError(Exception):
+    __module__ = 'builtins'
+
+
 @final
 class wtsString:
     __slots__ = '_id', '_comment', '_content'
 
-    def __init__(self, id_: int, comment: str, content: str, /):
-        self._id = id_
+    def __init__(self, id: int, content: str, comment: str = '', /):
+        if id < 0:
+            raise wtsStringError(f'id cannot be negative, got {id}')
+
+        self._id = id
         self._comment = comment
         self._content = content
 
