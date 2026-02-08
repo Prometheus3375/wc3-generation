@@ -18,4 +18,4 @@ Annotation = Union[
 
 
 def eval_hint(hint: str, /, globals_: dict = None, locals_: dict = None):
-    return ForwardRef(hint, False)._evaluate(globals_, locals_, frozenset())
+    return ForwardRef(hint, False)._evaluate(globals_, locals_, recursive_guard=frozenset())
