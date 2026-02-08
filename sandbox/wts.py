@@ -1,13 +1,13 @@
-from misclib import exc2str
+from traceback import format_exception
 
-from wc3gen.wts import wtsFile
+from wc3gen.wts import wtsStorage
 
 
 def extract_types_and_fields(path: str):
-    file = wtsFile(path)
+    file = wtsStorage.open(path)
     types = set()
     fields = set()
-    for s in file.storage:
+    for s in file:
         try:
             comment = s.comment.strip()
             if comment:
@@ -20,7 +20,7 @@ def extract_types_and_fields(path: str):
             print(f'Exception in string {s.id}')
             print(f'Comment: {s.comment}')
 
-            print(exc2str(e))
+            print(format_exception(e), sep='')
 
     for t in sorted(types):
         print(f'{t} = \'{t}\'')
