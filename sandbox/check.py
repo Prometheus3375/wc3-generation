@@ -1,7 +1,7 @@
+from collections.abc import Callable
+from traceback import format_exception
 from types import GenericAlias
-from typing import NamedTuple
-
-from misclib import except_
+from typing import Any, NamedTuple
 
 
 class LIST:
@@ -20,7 +20,7 @@ class MyList(list[list], LIST):
             f'  1st orig base params: {orig_bases[0].__parameters__}\n'
             f'  1st orig base origin: {orig_bases[0].__origin__}\n'
             f'  1st orig base args: {orig_bases[0].__args__}\n'
-        )
+            )
 
 
 class MySubList(MyList):
@@ -46,10 +46,18 @@ print(
     f'  _fields: {MyTuple._fields}\n'
     f'  __annotations__: {MyTuple.__annotations__}\n'
     f'  _field_defaults: {MyTuple._field_defaults}\n'
-)
+    )
 
 t = MyTuple(1, 'info')
 print(type(t._asdict()))
+
+
+def except_(smth: Callable[..., Any], /, *args, **kwargs):
+    try:
+        return smth(*args, **kwargs)
+    except Exception as e:
+        print(*format_exception(e), sep='')
+
 
 except_(lambda: print(MyList.lol))
 except_(MyTuple, 1, 'info', 1.0)

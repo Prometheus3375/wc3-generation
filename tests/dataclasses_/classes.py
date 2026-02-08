@@ -1,7 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass
+from traceback import format_exception
 from typing import Any, NamedTuple
-
-from misclib import except_
 
 
 @dataclass
@@ -130,6 +130,13 @@ class ImmutableObjectObject:
 
 
 if __name__ == '__main__':
+    def except_(smth: Callable[..., Any], /, *args, **kwargs):
+        try:
+            return smth(*args, **kwargs)
+        except Exception as e:
+            print(*format_exception(e), sep='')
+
+
     data = ImmutableObject(1)
     except_(exec, 'data.field2 = 1', {'data': data})
     except_(exec, 'data.field3 = 1', {'data': data})
