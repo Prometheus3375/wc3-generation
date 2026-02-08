@@ -1,6 +1,4 @@
 __pycache__/
 
-.idea/
-venv/
-sandbox/wisptd-reader.json
-pycharm.py
+/.venv/
+/sandbox/wisptd-reader.json
