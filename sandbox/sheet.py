@@ -90,4 +90,29 @@ class MinionStats(Sheet[Stats]):
     transpose = True
 
 
-sheet = MinionStats()
+def conv(value: str) -> int:
+    return 0 if value == '' else int(value)
+
+
+class MinionUpgrade(Row):
+    name: str = 'upgrade'
+    gold_cost: int = conv
+    exp_cost: int = conv
+    description: str
+    minion_description: str
+    button_raw: str
+    icon_raw: str
+
+
+class MinionUpgrades(Sheet[MinionUpgrade]):
+    spreadsheet = spreadsheet
+    title = 'Minion Upgrades'
+
+
+# class MinionUpgradesRu(Sheet[MinionUpgrade]):
+#     spreadsheet = spreadsheet
+#     title = 'Minion Upgrades Ru'
+
+
+minion_stats = MinionStats()
+minion_upgrades = MinionUpgrades()
