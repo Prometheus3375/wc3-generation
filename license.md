@@ -1,6 +1,6 @@
-BSD 3-Clause License
+# BSD 3-Clause License
 
-Copyright (c) 2020, Prometheus3375
+Copyright (c) 2026, Prometheus3375
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
