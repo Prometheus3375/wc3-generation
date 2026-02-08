@@ -5,9 +5,12 @@ from sys import intern, modules
 from typing import Any, Union
 from weakref import WeakSet
 
-from misclib import frozendict, repr_collection
+from misclib.functions import repr_collection
 from .conversions import ConversionFunc
 from .._typing import Annotation, eval_hint
+
+frozendict = dict
+
 
 # TODO suggest to take type from .pyi stub file rather than in source
 

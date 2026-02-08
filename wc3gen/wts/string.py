@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, final
 
-from misclib import truncate_string
+from misclib.functions import truncate_string
 
 
 @final

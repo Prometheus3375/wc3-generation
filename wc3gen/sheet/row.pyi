@@ -1,6 +1,6 @@
+from collections.abc import Mapping
 from typing import Any, Final, TypeVar
 
-from misclib import frozendict
 from .conversions import ConversionFunc
 
 _T = TypeVar('_T')
@@ -8,9 +8,9 @@ _T = TypeVar('_T')
 
 class Row(tuple):
     fields_: Final[tuple[str, ...]]
-    titles_: Final[frozendict[str, str]]
-    subrows_: Final[frozendict[str, 'Row']]
-    titles2conversions_: Final[frozendict[str, ConversionFunc]]
+    titles_: Final[Mapping[str, str]]
+    subrows_: Final[Mapping[str, 'Row']]
+    titles2conversions_: Final[Mapping[str, ConversionFunc]]
 
     def __new__(cls, /, *args: Any) -> 'Row':
         """Create a new instance"""

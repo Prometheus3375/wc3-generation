@@ -4,14 +4,14 @@ from weakref import WeakKeyDictionary
 
 from gspread import Spreadsheet, Worksheet
 
-from misclib import repr_collection
-from misclib.metaclasses import EmptySlotsByDefaults
+from misclib.functions import repr_collection
+from misclib.metaclasses import EmptySlots
 from .functions import _index2column
 from .row import Row
 from .wrapper import SpreadsheetWrapper
 
 
-class _SheetMeta(EmptySlotsByDefaults):
+class _SheetMeta(EmptySlots):
     __instances__ = WeakKeyDictionary()
     spreadsheet: Spreadsheet
     index: Optional[int]

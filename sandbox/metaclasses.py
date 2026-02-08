@@ -1,4 +1,4 @@
-from misclib.metaclasses import EmptySlotsByDefaults
+from misclib.metaclasses import EmptySlots
 
 
 class Meta1(type):
@@ -21,5 +21,5 @@ class Class(metaclass=Meta3, arg1='1', arg2='2'):
     pass
 
 
-class MyClass(metaclass=EmptySlotsByDefaults):
+class MyClass(metaclass=EmptySlots):
     pass
